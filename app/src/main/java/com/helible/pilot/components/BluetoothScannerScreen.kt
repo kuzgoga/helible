@@ -1,7 +1,7 @@
 package com.helible.pilot.components
 
 import android.annotation.SuppressLint
-import android.bluetooth.BluetoothAdapter
+import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -18,22 +18,23 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
+import com.helible.pilot.BluetoothUiState
 import com.helible.pilot.Device
 
 
 @SuppressLint("MissingPermission")
 @Composable
 fun BluetoothScannerScreen(
-    devices: MutableList<Device>,
-    selectedDevice: MutableState<Device?>,
-    bluetoothIsDiscoveringState: MutableState<Boolean>,
-    bluetoothAdapter: BluetoothAdapter?,
+    bluetoothState: BluetoothUiState,
+    selectedDevice: Device?,
+    startScan: () -> Unit,
+    cancelScan: () -> Unit,
+    choiceDevice: (device: Device?) -> Unit,
     onScreenChanged: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -52,8 +53,9 @@ fun BluetoothScannerScreen(
             )
 
             DiscoveredDevicesList(
-                devices = devices,
+                devices = bluetoothState.scannedDevices,
                 selectedDevice = selectedDevice,
+                choiceDevice = choiceDevice,
                 modifier = Modifier
                     .constrainAs(devicesList) {
                         top.linkTo(title.bottom)
@@ -62,7 +64,7 @@ fun BluetoothScannerScreen(
                     }
             )
 
-            if (devices.isEmpty() && bluetoothIsDiscoveringState.value) {
+            if (bluetoothState.scannedDevices.isEmpty() && bluetoothState.isDiscovering) {
                 Box(
                     modifier = Modifier.fillMaxSize()
                 ) {
@@ -81,21 +83,20 @@ fun BluetoothScannerScreen(
                 horizontalArrangement = Arrangement.Center
             ) {
                 FilledIconToggleButton(
-                    checked = bluetoothIsDiscoveringState.value,
+                    checked = bluetoothState.isDiscovering,
                     onCheckedChange = {
-                        selectedDevice.value = null
-                        if (bluetoothIsDiscoveringState.value)
-                            bluetoothAdapter?.cancelDiscovery()
-                        else {
-                            devices.clear()
-                            bluetoothAdapter?.startDiscovery()
+                        if (bluetoothState.isDiscovering) {
+                            cancelScan()
+                            Log.i("ScanActivity", "Trying to start scan via button")
+                        } else {
+                            startScan()
                         }
                     }, modifier = Modifier
                         .align(Alignment.Bottom)
                         .padding(5.dp)
                 ) {
                     Icon(
-                        if (bluetoothIsDiscoveringState.value) Icons.Filled.Close
+                        if (bluetoothState.isDiscovering) Icons.Filled.Close
                         else Icons.Filled.Refresh,
                         contentDescription = null
                     )
@@ -107,7 +108,7 @@ fun BluetoothScannerScreen(
                     modifier = Modifier
                         .align(Alignment.Bottom)
                         .padding(5.dp),
-                    enabled = selectedDevice.value != null,
+                    enabled = selectedDevice != null,
                 ) {
                     Text(text = "Далее")
                 }

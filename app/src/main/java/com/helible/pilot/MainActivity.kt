@@ -1,21 +1,13 @@
 package com.helible.pilot
 
 import android.Manifest
-import android.annotation.SuppressLint
-import android.bluetooth.BluetoothAdapter
-import android.bluetooth.BluetoothManager
-import android.content.BroadcastReceiver
 import android.content.Context
-import android.content.Intent
-import android.location.LocationManager
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -32,36 +24,29 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.helible.pilot.components.BluetoothScannerScreen
 import com.helible.pilot.components.PreferencesCacheImpl
 import com.helible.pilot.components.SavedPreferences
 import com.helible.pilot.ui.theme.TestblueTheme
-import java.util.concurrent.Executors
 
-@SuppressLint("MissingPermission")
+
 class MainActivity : ComponentActivity() {
-    // TODO: delegate part of Intent filters logic to BluetoothController
-    // TODO: move bluetooth states and stateFlow to new BluetoothViewModel
     // TODO: replace field bluetoothDevice in Device to deviceAddress field
-    // TODO: replace some mutableStates to stateFlows
     // TODO: share selected device via PersistentViewModel
-    // TODO: check permissions inside other classes (and throw an exception, if one of this isn't granted)
     // TODO: add stub instead of the DevicesList, if there aren't nearby devices
     // TODO: add Bluetooth data transfer...
     // TODO: add text strings to resource
-    val mainViewModel: MainViewModel = MainViewModel(AndroidBluetoothController())
 
-    private val bluetoothManager: BluetoothManager by lazy {
-        getSystemService(BluetoothManager::class.java)
+    private val bluetoothViewModel by lazy {
+        BluetoothViewModel(AndroidBluetoothController(applicationContext))
     }
-    private val bluetoothAdapter: BluetoothAdapter? by lazy {
-        bluetoothManager.adapter
-    }
+
     private var permissionsViewModel = PermissionDialogViewModel()
-    private lateinit var permissionLauncher: ManagedActivityResultLauncher<Array<String>, Map<String, Boolean>>
 
     private val permissionsToRequest: Array<String> by lazy {
         if (Build.VERSION.SDK_INT <= 30) {
@@ -71,15 +56,11 @@ class MainActivity : ComponentActivity() {
         } else {
             arrayOf(
                 Manifest.permission.BLUETOOTH_SCAN,
-                Manifest.permission.BLUETOOTH_CONNECT,
-                Manifest.permission.BLUETOOTH_ADMIN
+                Manifest.permission.BLUETOOTH_CONNECT
             )
         }
     }
 
-    private val locationManager: LocationManager by lazy {
-        getSystemService(LOCATION_SERVICE) as LocationManager
-    }
     private val preferencesCache by lazy {
         PreferencesCacheImpl(getSharedPreferences(packageName, Context.MODE_PRIVATE))
     }
@@ -90,12 +71,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        mainViewModel.bluetoothTurnOnState.value = bluetoothAdapter?.isEnabled
-        mainViewModel.locationTurnOnState.value =
-            locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
-
         setContent {
-            this.permissionLauncher = rememberLauncherForActivityResult(
+            val permissionLauncher = rememberLauncherForActivityResult(
                 contract = ActivityResultContracts.RequestMultiplePermissions(),
                 onResult = { perms ->
                     permissionsToRequest.forEach { permission ->
@@ -104,18 +81,25 @@ class MainActivity : ComponentActivity() {
                             isGranted = perms[permission] == true
                         )
                     }
+                    if(hasAllPermissions() && !bluetoothViewModel.state.value.isDiscovering)
+                        bluetoothViewModel.startScan()
                 }
             )
 
-            val state by mainViewModel.state.collectAsState()
+            val bluetoothState by bluetoothViewModel.state.collectAsState()
+            val selectedDevice by bluetoothViewModel.selectedDevice.collectAsState()
 
-            LaunchedEffect(key1 = state.errorMessage) {
-                state.errorMessage?.let { message ->
+            LaunchedEffect(key1 = null) {
+                permissionLauncher.launch(permissionsToRequest)
+            }
+
+            LaunchedEffect(key1 = bluetoothState.errorMessage) {
+                bluetoothState.errorMessage?.let { message ->
                     Toast.makeText(applicationContext, message, Toast.LENGTH_LONG).show()
                 }
             }
-            LaunchedEffect(key1 = state) {
-                if (state.isConnected) {
+            LaunchedEffect(key1 = bluetoothState) {
+                if (bluetoothState.isConnected) {
                     Toast.makeText(applicationContext, "Подключение завершено", Toast.LENGTH_LONG)
                         .show()
                 }
@@ -133,26 +117,26 @@ class MainActivity : ComponentActivity() {
 
                     RequestHardwareFeatures(
                         activity = this,
-                        turnOnLocation = Manifest.permission.ACCESS_FINE_LOCATION in permissionsToRequest,
-                        bluetoothTurnOnState = mainViewModel.bluetoothTurnOnState,
-                        locationTurnOnState = mainViewModel.locationTurnOnState
+                        bluetoothUiState = bluetoothState
                     )
 
                     NavHost(navController = navController, startDestination = "scanner") {
                         composable("scanner") {
                             BluetoothScannerScreen(
-                                devices = mainViewModel.devices,
-                                selectedDevice = mainViewModel.selectedDevice,
-                                bluetoothIsDiscoveringState = mainViewModel.isBluetoothDiscoveryRunning,
-                                bluetoothAdapter = bluetoothAdapter,
+                                bluetoothState = bluetoothState,
+                                selectedDevice = selectedDevice,
+                                startScan = { bluetoothViewModel.startScan() },
+                                cancelScan = { bluetoothViewModel.cancelScan() },
+                                choiceDevice = {device -> bluetoothViewModel.selectDevice(device)},
                                 onScreenChanged = {
-                                    bluetoothAdapter?.cancelDiscovery()
+                                    bluetoothViewModel.cancelScan()
+                                    val deviceAddress = selectedDevice?.bluetoothDevice?.address
                                     preferencesViewModel.savePreferences(
                                         SavedPreferences(
-                                            mainViewModel.selectedDevice.value?.bluetoothDevice?.address
+                                            deviceAddress
                                         )
                                     )
-                                    navController.navigate("flight")
+                                    navController.navigate("flight/$deviceAddress")
                                     Log.i(
                                         "ScanActivity",
                                         "Preferences: ${preferencesViewModel.preferences}"
@@ -160,15 +144,21 @@ class MainActivity : ComponentActivity() {
                                 }
                             )
                         }
-                        composable("flight") {
-
+                        composable(
+                            "flight/{device_address}",
+                            arguments = listOf(navArgument("device_address"){type = NavType.StringType})
+                        ) {
+                            backstackEntry ->
                             LaunchedEffect(Unit) {
-                                // TODO: refactor
-                                val device: Device = mainViewModel.selectedDevice.value!!
-                                mainViewModel.connectToDevice(device)
+                                val device: Device? = selectedDevice
+                                if(device == null){
+                                    navController.navigate("scanner")
+                                } else {
+                                    bluetoothViewModel.connectToDevice(device)
+                                }
                             }
                             when {
-                                state.isConnecting -> {
+                                bluetoothState.isConnecting -> {
                                     Column(
                                         modifier = Modifier.fillMaxSize(),
                                         horizontalAlignment = Alignment.CenterHorizontally,
@@ -181,7 +171,7 @@ class MainActivity : ComponentActivity() {
 
                                 else -> {
                                     Text(
-                                        text = "Device name: ${mainViewModel.selectedDevice.value?.bluetoothDevice?.name}",
+                                        text = "Device name: ${backstackEntry.arguments?.getString("device_address")}",
                                         modifier = Modifier.fillMaxSize(),
                                         textAlign = TextAlign.Center
                                     )
@@ -192,58 +182,35 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
-        registerIntentFilters(this, receiver)
-        requestPermissions()
-    }
 
-    private val receiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context?, intent: Intent) {
-            receiveIntentChanges(
-                intent,
-                mainViewModel,
-                bluetoothAdapter,
-                locationManager
-            )
-        }
     }
-
-    private fun requestPermissions() {
-        Executors.newSingleThreadExecutor().execute {
-            Handler(Looper.getMainLooper()).post {
-                permissionLauncher.launch(permissionsToRequest)
-            }
-        }
-    }
-
     override fun onDestroy() {
-        unregisterReceiver(receiver)
         super.onDestroy()
-        Log.i("ScanActivity", "ACTIVITY DESTROYED")
-        bluetoothAdapter?.cancelDiscovery()
-        try {
-            unregisterReceiver(receiver)
-        } catch (e: IllegalArgumentException) {
-            Log.e(
-                "ScanActivity",
-                "Receiver wasn't registered ${e.localizedMessage}\nStackTrace: ${e.stackTrace}"
-            )
-        }
+        bluetoothViewModel.onDestroy()
     }
+
 
     override fun onStart() {
         super.onStart()
-        if (bluetoothAdapter?.isDiscovering != true)
-            bluetoothAdapter?.startDiscovery()
-        Log.i("ScanActivity", "ACTIVITY STARTED")
+        bluetoothViewModel.startScan()
     }
 
     override fun onStop() {
         super.onStop()
-        bluetoothAdapter?.cancelDiscovery()
-        mainViewModel.devices.clear()
-        mainViewModel.selectedDevice.value = null
-        Log.i("ScanActivity", "ACTIVITY STOPPED")
+        if(!hasAllPermissions()) return
+        bluetoothViewModel.cancelScan()
+        bluetoothViewModel.selectDevice(null)
     }
+
+    private fun hasAllPermissions(): Boolean {
+        permissionsToRequest.forEach { perm ->
+            if(checkSelfPermission(perm) != PackageManager.PERMISSION_GRANTED){
+                return false
+            }
+        }
+        return true
+    }
+
 }
 
 

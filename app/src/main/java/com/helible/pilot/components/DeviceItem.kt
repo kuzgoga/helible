@@ -29,12 +29,12 @@ import com.helible.pilot.R
 
 @SuppressLint("MissingPermission")
 @Composable
-fun DeviceItem(deviceInfo: Device, selectedDevice: MutableState<Device?>, modifier: Modifier) {
+fun DeviceItem(deviceInfo: Device, selectedDevice: Device?, choiceDevice: (device: Device?) -> Unit, modifier: Modifier) {
     ElevatedCard(
         modifier=modifier.clickable {
-            selectedDevice.value = deviceInfo
+            choiceDevice(deviceInfo)
         },
-        colors = CardDefaults.elevatedCardColors(containerColor = if (deviceInfo.bluetoothDevice == selectedDevice.value?.bluetoothDevice)
+        colors = CardDefaults.elevatedCardColors(containerColor = if (deviceInfo.bluetoothDevice == selectedDevice?.bluetoothDevice)
             MaterialTheme.colorScheme.secondaryContainer
             else MaterialTheme.colorScheme.surface
         )
@@ -42,12 +42,7 @@ fun DeviceItem(deviceInfo: Device, selectedDevice: MutableState<Device?>, modifi
         Row(modifier=Modifier.padding(8.dp)) {
             Column(verticalArrangement = Arrangement.Center) {
                 Text(text=deviceInfo.bluetoothDevice.name, fontWeight = FontWeight.Bold, softWrap = true)
-                AndroidView(factory = { context ->
-                    TextView(context).apply {
-                        // Using old TextView for text formatting
-                        text = HtmlCompat.fromHtml("<b>MAC</b>: ${deviceInfo.bluetoothDevice.address}", HtmlCompat.FROM_HTML_MODE_LEGACY)
-                    }
-                })
+                Text(text="MAC: ${deviceInfo.bluetoothDevice.address}", fontWeight = FontWeight.Thin)
             }
             Box(contentAlignment = Alignment.CenterEnd, modifier = Modifier.fillMaxSize()) {
                 Icon(

@@ -14,11 +14,11 @@ fun RequiredHardwareFeatures(
     title: String,
     description: String,
     confirmButtonText: String,
-    featureState: MutableState<Boolean?>,
+    featureState: Boolean,
     requestFeature: () -> Unit,
     onDismissRequest: () -> Unit
 ) {
-    if (featureState.value == false || featureState.value == null) {
+    if (!featureState) {
         AlertDialog(
             confirmButton = {
                 Divider()
