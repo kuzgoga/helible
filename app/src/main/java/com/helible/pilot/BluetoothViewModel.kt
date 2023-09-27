@@ -1,7 +1,6 @@
 package com.helible.pilot
 
 import android.bluetooth.BluetoothDevice
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
@@ -16,18 +15,6 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
-
-data class BluetoothUiState(
-    val isEnabled: Boolean = false,
-    val isLocationEnabled: Boolean = false,
-    val isDiscovering: Boolean = false,
-    val isConnected: Boolean = false,
-    val isConnecting: Boolean = false,
-    val errorMessage: String? = null,
-    val scannedDevices: List<Device> = emptyList(),
-    val pairedDevices: List<BluetoothDevice> = emptyList(),
-)
-
 class BluetoothViewModel(
     private val bluetoothController: BluetoothController
 ) : ViewModel() {
@@ -41,7 +28,7 @@ class BluetoothViewModel(
     { scannedDevices, pairedDevices, state ->
         state.copy(
             scannedDevices = scannedDevices.toList(),
-            pairedDevices = pairedDevices.toList()
+            pairedDevices = pairedDevices
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), _state.value)
 
@@ -82,6 +69,9 @@ class BluetoothViewModel(
                             errorMessage = null
                         )
                     }
+                }
+                is ConnectionResult.TransferSucceded -> {
+                    TODO("Telemetry not implemented")
                 }
                 is ConnectionResult.Error -> {
                     _state.update { it.copy(

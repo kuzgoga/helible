@@ -29,36 +29,51 @@ import com.helible.pilot.R
 
 @SuppressLint("MissingPermission")
 @Composable
-fun DeviceItem(deviceInfo: Device, selectedDevice: Device?, choiceDevice: (device: Device?) -> Unit, modifier: Modifier) {
+fun DeviceItem(
+    deviceInfo: Device,
+    selectedDevice: Device?,
+    choiceDevice: (device: Device?) -> Unit,
+    modifier: Modifier,
+) {
     ElevatedCard(
-        modifier=modifier.clickable {
+        modifier = modifier.clickable {
             choiceDevice(deviceInfo)
         },
-        colors = CardDefaults.elevatedCardColors(containerColor = if (deviceInfo.bluetoothDevice == selectedDevice?.bluetoothDevice)
-            MaterialTheme.colorScheme.secondaryContainer
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = if (deviceInfo.bluetoothDevice == selectedDevice?.bluetoothDevice)
+                MaterialTheme.colorScheme.secondaryContainer
             else MaterialTheme.colorScheme.surface
         )
     ) {
-        Row(modifier=Modifier.padding(8.dp)) {
+        Row(modifier = Modifier.padding(8.dp)) {
             Column(verticalArrangement = Arrangement.Center) {
-                Text(text=deviceInfo.bluetoothDevice.name, fontWeight = FontWeight.Bold, softWrap = true)
-                Text(text="MAC: ${deviceInfo.bluetoothDevice.address}", fontWeight = FontWeight.Thin)
-            }
-            Box(contentAlignment = Alignment.CenterEnd, modifier = Modifier.fillMaxSize()) {
-                Icon(
-                    painterResource(id = getSignalIconForRssiValue(deviceInfo.rssi)),
-                    contentDescription = null,
-                    modifier = Modifier
-                        .fillMaxHeight()
-                        .padding(10.dp),
-                    tint = MaterialTheme.colorScheme.primary
+                Text(
+                    text = deviceInfo.bluetoothDevice.name,
+                    fontWeight = FontWeight.Bold,
+                    softWrap = true
                 )
+                Text(
+                    text = "MAC: ${deviceInfo.bluetoothDevice.address}",
+                    fontWeight = FontWeight.Thin
+                )
+            }
+            if (!deviceInfo.isPaired) {
+                Box(contentAlignment = Alignment.CenterEnd, modifier = Modifier.fillMaxSize()) {
+                    Icon(
+                        painterResource(id = getSignalIconForRssiValue(deviceInfo.rssi)),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .padding(10.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
             }
         }
     }
 }
 
-fun getSignalIconForRssiValue(rssi: Short): Int{
+fun getSignalIconForRssiValue(rssi: Short): Int {
     if (rssi >= -80) return R.drawable.signal_icon4
     else if (rssi >= -90) return R.drawable.signal_icon3
     else if (rssi >= -100) return R.drawable.signal_icon2

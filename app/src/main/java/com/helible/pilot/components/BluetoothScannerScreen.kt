@@ -45,7 +45,7 @@ fun BluetoothScannerScreen(
             val (title, devicesList, controls) = createRefs()
 
             Title(
-                text = "Поиск устройств",
+                text = "Устройства поблизости",
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 10.dp)
@@ -53,7 +53,7 @@ fun BluetoothScannerScreen(
             )
 
             DiscoveredDevicesList(
-                devices = bluetoothState.scannedDevices,
+                bluetoothState = bluetoothState,
                 selectedDevice = selectedDevice,
                 choiceDevice = choiceDevice,
                 modifier = Modifier
