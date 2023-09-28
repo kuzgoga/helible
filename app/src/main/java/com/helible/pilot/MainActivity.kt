@@ -93,11 +93,7 @@ class MainActivity : ComponentActivity() {
                 permissionLauncher.launch(permissionsToRequest)
             }
 
-            LaunchedEffect(key1 = bluetoothState.errorMessage) {
-                bluetoothState.errorMessage?.let { message ->
-                    Toast.makeText(applicationContext, message, Toast.LENGTH_LONG).show()
-                }
-            }
+
             LaunchedEffect(key1 = bluetoothState) {
                 if (bluetoothState.isConnected) {
                     Toast.makeText(applicationContext, "Подключение завершено", Toast.LENGTH_LONG)
@@ -106,6 +102,14 @@ class MainActivity : ComponentActivity() {
             }
 
             val navController = rememberNavController()
+
+            LaunchedEffect(key1 = bluetoothState.errorMessage) {
+                bluetoothState.errorMessage?.let { message ->
+                    Toast.makeText(applicationContext, message, Toast.LENGTH_LONG).show()
+                    navController.navigate("scanner")
+                }
+            }
+
             TestblueTheme {
                 Surface(color = MaterialTheme.colorScheme.background) {
                     PermissionsRequest(

@@ -64,14 +64,6 @@ fun BluetoothScannerScreen(
                     }
             )
 
-            if (bluetoothState.scannedDevices.isEmpty() && bluetoothState.isDiscovering) {
-                Box(
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-                }
-            }
-
             Row(
                 modifier = Modifier
                     .padding(5.dp)
