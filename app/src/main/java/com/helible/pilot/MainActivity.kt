@@ -98,6 +98,7 @@ class MainActivity : ComponentActivity() {
                 if (bluetoothState.isConnected) {
                     Toast.makeText(applicationContext, "Подключение завершено", Toast.LENGTH_LONG)
                         .show()
+                    bluetoothViewModel.sendMessage(KMessage(1u,2u,3u,false, false))
                 }
             }
 
@@ -105,7 +106,7 @@ class MainActivity : ComponentActivity() {
 
             LaunchedEffect(key1 = bluetoothState.errorMessage) {
                 bluetoothState.errorMessage?.let { message ->
-                    Toast.makeText(applicationContext, message, Toast.LENGTH_LONG).show()
+                    Toast.makeText(applicationContext, "Ошибка: $message", Toast.LENGTH_LONG).show()
                     navController.navigate("scanner")
                 }
             }

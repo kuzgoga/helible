@@ -28,7 +28,6 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
-import kotlinx.coroutines.flow.toSet
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.io.IOException
@@ -147,7 +146,8 @@ class AndroidBluetoothController(private val context: Context) : BluetoothContro
     )
 
     companion object {
-        const val SERVICE_UUID = "af7cc14b-cffa-4a3d-b677-01b0ff0a93d7"
+        // SPP service UUID
+        const val SERVICE_UUID = "00001101-0000-1000-8000-00805F9B34FB"
     }
 
     init {
@@ -241,7 +241,7 @@ class AndroidBluetoothController(private val context: Context) : BluetoothContro
         if(dataTransferService == null) {
             return null
         }
-        dataTransferService?.sendMessage(message.toByteArray())
+        dataTransferService?.sendMessage("R1399\n\r".toByteArray())
         return message
     }
 

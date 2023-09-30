@@ -15,6 +15,8 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+
 class BluetoothViewModel(
     private val bluetoothController: BluetoothController
 ) : ViewModel() {
@@ -129,5 +131,11 @@ class BluetoothViewModel(
 
     fun cancelScan() {
         bluetoothController.cancelDiscovery()
+    }
+
+    fun sendMessage(message: KMessage) {
+        viewModelScope.launch {
+            bluetoothController.trySendMessage(message)
+        }
     }
 }
