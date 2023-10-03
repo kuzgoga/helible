@@ -241,7 +241,7 @@ class AndroidBluetoothController(private val context: Context) : BluetoothContro
         if(dataTransferService == null) {
             return null
         }
-        dataTransferService?.sendMessage("R1399\n\r".toByteArray())
+        dataTransferService?.sendMessage("R1250\n\r".toByteArray())
         return message
     }
 

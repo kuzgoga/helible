@@ -1,6 +1,5 @@
 package com.helible.pilot
 
-import android.bluetooth.BluetoothDevice
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
@@ -84,7 +83,7 @@ class BluetoothViewModel(
                 }
             }
         }
-            .catch { throwable ->
+            .catch { _ ->
                 bluetoothController.closeConnection()
                 _state.update {
                     it.copy(

@@ -8,6 +8,7 @@ import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -161,6 +162,11 @@ class MainActivity : ComponentActivity() {
                                 } else {
                                     bluetoothViewModel.connectToDevice(device)
                                 }
+                            }
+                            BackHandler {
+                                bluetoothViewModel.disconnectFromDevice()
+                                Log.i("FlightScreen", "Disconnected from device")
+                                navController.navigate("scanner")
                             }
                             when {
                                 bluetoothState.isConnecting -> {
