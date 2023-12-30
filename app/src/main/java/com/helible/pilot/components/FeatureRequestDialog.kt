@@ -16,14 +16,14 @@ fun RequiredHardwareFeatures(
     confirmButtonText: String,
     featureState: Boolean,
     requestFeature: () -> Unit,
-    onDismissRequest: () -> Unit
+    onDismissRequest: () -> Unit,
 ) {
     if (!featureState) {
         AlertDialog(
             confirmButton = {
                 Divider()
                 TextButton(onClick = requestFeature, modifier = Modifier.fillMaxWidth()) {
-                    Text(text=confirmButtonText)
+                    Text(text = confirmButtonText)
                 }
             },
             onDismissRequest = onDismissRequest,
@@ -32,7 +32,7 @@ fun RequiredHardwareFeatures(
                     text = description
                 )
             },
-            title = { Text(text = title)}
+            title = { Text(text = title) }
         )
     }
 }

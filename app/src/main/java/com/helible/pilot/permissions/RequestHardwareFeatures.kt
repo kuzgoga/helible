@@ -1,4 +1,4 @@
-package com.helible.pilot
+package com.helible.pilot.permissions
 
 import android.annotation.SuppressLint
 import android.app.Activity
@@ -8,14 +8,14 @@ import android.os.Build
 import android.provider.Settings
 import androidx.compose.runtime.Composable
 import com.helible.pilot.components.RequiredHardwareFeatures
+import com.helible.pilot.dataclasses.BluetoothUiState
 
 @SuppressLint("MissingPermission")
 @Composable
 fun RequestHardwareFeatures(
     activity: Activity,
-    bluetoothUiState: BluetoothUiState
-)
-{
+    bluetoothUiState: BluetoothUiState,
+) {
     RequiredHardwareFeatures(
         title = "Включите Bluetooth",
         description = "Для работы приложения требуется Bluetooth",

@@ -14,15 +14,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.helible.pilot.BluetoothUiState
-import com.helible.pilot.Device
+import com.helible.pilot.dataclasses.BluetoothUiState
+import com.helible.pilot.dataclasses.BluetoothDevice
 
 @Composable
 fun DiscoveredDevicesList(
     bluetoothState: BluetoothUiState,
-    selectedDevice: Device?,
-    choiceDevice: (device: Device?) -> Unit,
-    modifier: Modifier = Modifier
+    selectedDevice: BluetoothDevice?,
+    choiceDevice: (device: BluetoothDevice?) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     LazyColumn(modifier = modifier) {
         item {
@@ -33,7 +33,7 @@ fun DiscoveredDevicesList(
                 modifier = Modifier.padding(10.dp)
             )
         }
-        items(bluetoothState.pairedDevices) { device ->
+        items(bluetoothState.pairedBluetoothDevices) { device ->
             DeviceItem(
                 deviceInfo = device,
                 selectedDevice = selectedDevice,
@@ -45,7 +45,7 @@ fun DiscoveredDevicesList(
                     )
             )
         }
-        if(bluetoothState.pairedDevices.isEmpty()){
+        if (bluetoothState.pairedBluetoothDevices.isEmpty()) {
             item {
                 Text(
                     text = "Нет элементов для отображения",
@@ -64,7 +64,7 @@ fun DiscoveredDevicesList(
             )
         }
 
-        items(bluetoothState.scannedDevices) { device ->
+        items(bluetoothState.scannedBluetoothDevices) { device ->
             DeviceItem(
                 deviceInfo = device,
                 selectedDevice = selectedDevice,
@@ -76,12 +76,15 @@ fun DiscoveredDevicesList(
                     )
             )
         }
-        if(bluetoothState.scannedDevices.isEmpty()) {
-            if(bluetoothState.isDiscovering) {
+        if (bluetoothState.scannedBluetoothDevices.isEmpty()) {
+            if (bluetoothState.isDiscovering) {
                 item {
-                    Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
                         CircularProgressIndicator()
-                        Text(text = "Поиск устройств", modifier=Modifier.padding(10.dp))
+                        Text(text = "Поиск устройств", modifier = Modifier.padding(10.dp))
                     }
                 }
             } else {

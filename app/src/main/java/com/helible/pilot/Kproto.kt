@@ -8,7 +8,7 @@ data class KMessage(
     val r2: UShort,
     val r3: UShort,
     val emergStop: Boolean,
-    val alarm: Boolean
+    val alarm: Boolean,
 )
 
 fun KMessage.toByteArray(): ByteArray {

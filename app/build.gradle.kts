@@ -1,7 +1,7 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
-    id("kotlin-parcelize")
+    id("com.google.devtools.ksp").version("1.6.10-1.0.4")
 }
 
 android {
@@ -63,7 +63,7 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.1")
     implementation("androidx.constraintlayout:constraintlayout-compose:1.0.1")
     implementation("androidx.navigation:navigation-compose:2.6.0")
-    implementation("com.google.code.gson:gson:2.10.1")
+    implementation("com.squareup.moshi:moshi-kotlin:1.14.0")
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")

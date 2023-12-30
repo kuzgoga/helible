@@ -1,7 +1,6 @@
 package com.helible.pilot.components
 
 import android.annotation.SuppressLint
-import android.widget.TextView
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -16,23 +15,20 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
-import androidx.core.text.HtmlCompat
-import com.helible.pilot.Device
+import com.helible.pilot.dataclasses.BluetoothDevice
 import com.helible.pilot.R
 
 @SuppressLint("MissingPermission")
 @Composable
 fun DeviceItem(
-    deviceInfo: Device,
-    selectedDevice: Device?,
-    choiceDevice: (device: Device?) -> Unit,
+    deviceInfo: BluetoothDevice,
+    selectedDevice: BluetoothDevice?,
+    choiceDevice: (device: BluetoothDevice?) -> Unit,
     modifier: Modifier,
 ) {
     ElevatedCard(
@@ -40,7 +36,7 @@ fun DeviceItem(
             choiceDevice(deviceInfo)
         },
         colors = CardDefaults.elevatedCardColors(
-            containerColor = if (deviceInfo.bluetoothDevice == selectedDevice?.bluetoothDevice)
+            containerColor = if (deviceInfo == selectedDevice)
                 MaterialTheme.colorScheme.secondaryContainer
             else MaterialTheme.colorScheme.surface
         )
@@ -48,16 +44,16 @@ fun DeviceItem(
         Row(modifier = Modifier.padding(8.dp)) {
             Column(verticalArrangement = Arrangement.Center) {
                 Text(
-                    text = deviceInfo.bluetoothDevice.name,
+                    text = deviceInfo.name,
                     fontWeight = FontWeight.Bold,
                     softWrap = true
                 )
                 Text(
-                    text = "MAC: ${deviceInfo.bluetoothDevice.address}",
+                    text = "MAC: ${deviceInfo.macAddress}",
                     fontWeight = FontWeight.Thin
                 )
             }
-            if (!deviceInfo.isPaired) {
+            if (deviceInfo.isScanned) {
                 Box(contentAlignment = Alignment.CenterEnd, modifier = Modifier.fillMaxSize()) {
                     Icon(
                         painterResource(id = getSignalIconForRssiValue(deviceInfo.rssi)),

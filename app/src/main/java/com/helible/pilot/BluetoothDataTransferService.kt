@@ -12,14 +12,14 @@ import java.io.IOException
 class TransferFailedException : IOException("Reading incoming data failed")
 
 class BluetoothDataTransferService(
-    private val socket: BluetoothSocket
+    private val socket: BluetoothSocket,
 ) {
     fun listenForIncomingMessages(): Flow<KMessage> {
         return flow {
-            if(!socket.isConnected)
+            if (!socket.isConnected)
                 return@flow
             val buffer = ByteArray(128)
-            while(true) {
+            while (true) {
                 val byteCount: Int = try {
                     socket.inputStream.read(buffer)
                 } catch (e: IOException) {

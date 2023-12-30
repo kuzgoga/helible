@@ -1,105 +1,73 @@
 package com.helible.pilot
 
-import android.Manifest
-import android.content.Context
-import android.content.pm.PackageManager
-import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextAlign
-import androidx.navigation.NavType
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
 import com.helible.pilot.components.BluetoothScannerScreen
-import com.helible.pilot.components.PreferencesCacheImpl
-import com.helible.pilot.components.SavedPreferences
+import com.helible.pilot.components.FlightControlScreen
+import com.helible.pilot.components.AppPreferences
+import com.helible.pilot.components.SavedPreferencesImpl
+import com.helible.pilot.permissions.PermissionsLauncher
+import com.helible.pilot.permissions.PermissionsRequest
+import com.helible.pilot.permissions.RequestHardwareFeatures
 import com.helible.pilot.ui.theme.TestblueTheme
+import com.helible.pilot.viewmodels.BluetoothViewModel
+import com.helible.pilot.viewmodels.BluetoothViewModelFactory
+import com.helible.pilot.viewmodels.PermissionDialogViewModel
+import com.helible.pilot.viewmodels.PreferencesViewModel
 
 
 class MainActivity : ComponentActivity() {
-    // TODO: replace field bluetoothDevice in Device to deviceAddress field
-    // TODO: share selected device via PersistentViewModel
-    // TODO: add stub instead of the DevicesList, if there aren't nearby devices
-    // TODO: add Bluetooth data transfer...
-    // TODO: add text strings to resource
+    // TODO: device screen logic
+    // TODO: add Bluetooth telemetry...
+    // TODO: move text strings to resources
 
-    private val bluetoothViewModel by lazy {
-        BluetoothViewModel(AndroidBluetoothController(applicationContext))
-    }
-
-    private var permissionsViewModel = PermissionDialogViewModel()
-
-    private val permissionsToRequest: Array<String> by lazy {
-        if (Build.VERSION.SDK_INT <= 30) {
-            arrayOf(
-                Manifest.permission.ACCESS_FINE_LOCATION
-            )
-        } else {
-            arrayOf(
-                Manifest.permission.BLUETOOTH_SCAN,
-                Manifest.permission.BLUETOOTH_CONNECT
-            )
-        }
-    }
-
-    private val preferencesCache by lazy {
-        PreferencesCacheImpl(getSharedPreferences(packageName, Context.MODE_PRIVATE))
+    private val preferences by lazy {
+        SavedPreferencesImpl(getSharedPreferences(packageName, MODE_PRIVATE))
     }
     private val preferencesViewModel by lazy {
-        PersistentViewModel(preferencesCache)
+        PreferencesViewModel(preferences)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         setContent {
-            val permissionLauncher = rememberLauncherForActivityResult(
-                contract = ActivityResultContracts.RequestMultiplePermissions(),
-                onResult = { perms ->
-                    permissionsToRequest.forEach { permission ->
-                        permissionsViewModel.onPermissionResult(
-                            permission = permission,
-                            isGranted = perms[permission] == true
-                        )
-                    }
-                    if(hasAllPermissions() && !bluetoothViewModel.state.value.isDiscovering)
-                        bluetoothViewModel.startScan()
-                }
+            val bluetoothViewModel =
+                viewModel<BluetoothViewModel>(factory = BluetoothViewModelFactory(applicationContext))
+
+            val permissionsViewModel = viewModel<PermissionDialogViewModel>()
+            val permissionLauncher = PermissionsLauncher()
+            permissionLauncher.setup(
+                onPermissionResult = { perm, isGranted ->
+                    permissionsViewModel.onPermissionResult(perm, isGranted)
+                },
+                onGranted = { bluetoothViewModel.startScan() }
             )
 
             val bluetoothState by bluetoothViewModel.state.collectAsState()
             val selectedDevice by bluetoothViewModel.selectedDevice.collectAsState()
 
             LaunchedEffect(key1 = null) {
-                permissionLauncher.launch(permissionsToRequest)
+                permissionLauncher.launch()
             }
 
 
             LaunchedEffect(key1 = bluetoothState) {
                 if (bluetoothState.isConnected) {
-                    Toast.makeText(applicationContext, "Подключение завершено", Toast.LENGTH_LONG)
+                    Toast.makeText(applicationContext, "Подключение завершено", Toast.LENGTH_SHORT)
                         .show()
-                    bluetoothViewModel.sendMessage(KMessage(1u,2u,3u,false, false))
                 }
             }
 
@@ -108,7 +76,6 @@ class MainActivity : ComponentActivity() {
             LaunchedEffect(key1 = bluetoothState.errorMessage) {
                 bluetoothState.errorMessage?.let { message ->
                     Toast.makeText(applicationContext, "Ошибка: $message", Toast.LENGTH_LONG).show()
-                    navController.navigate("scanner")
                 }
             }
 
@@ -118,7 +85,7 @@ class MainActivity : ComponentActivity() {
                         dismissCurrentDialog = { permissionsViewModel.dismissDialog() },
                         visiblePermissionDialogQueue = permissionsViewModel.visiblePermissionDialogQueue,
                         activity = this,
-                        permissionLauncher = permissionLauncher
+                        permissionLaunch = { perms -> permissionLauncher.launch(perms) }
                     )
 
                     RequestHardwareFeatures(
@@ -126,23 +93,31 @@ class MainActivity : ComponentActivity() {
                         bluetoothUiState = bluetoothState
                     )
 
-                    NavHost(navController = navController, startDestination = "scanner") {
+                    NavHost(
+                        navController = navController,
+                        startDestination = "device"
+                    ) {
                         composable("scanner") {
                             BluetoothScannerScreen(
                                 bluetoothState = bluetoothState,
                                 selectedDevice = selectedDevice,
                                 startScan = { bluetoothViewModel.startScan() },
                                 cancelScan = { bluetoothViewModel.cancelScan() },
-                                choiceDevice = {device -> bluetoothViewModel.selectDevice(device)},
+                                choiceDevice = { device -> bluetoothViewModel.selectDevice(device) },
                                 onScreenChanged = {
                                     bluetoothViewModel.cancelScan()
-                                    val deviceAddress = selectedDevice?.bluetoothDevice?.address
-                                    preferencesViewModel.savePreferences(
-                                        SavedPreferences(
-                                            deviceAddress
+                                    val device = selectedDevice
+                                    if (device == null) {
+                                        preferencesViewModel.clearPreferences()
+                                    } else {
+                                        preferencesViewModel.savePreferences(
+                                            AppPreferences(
+                                                deviceName = device.name,
+                                                deviceAddress = device.macAddress
+                                            )
                                         )
-                                    )
-                                    navController.navigate("flight/$deviceAddress")
+                                    }
+                                    navController.navigate("device")
                                     Log.i(
                                         "ScanActivity",
                                         "Preferences: ${preferencesViewModel.preferences}"
@@ -150,44 +125,28 @@ class MainActivity : ComponentActivity() {
                                 }
                             )
                         }
-                        composable(
-                            "flight/{device_address}",
-                            arguments = listOf(navArgument("device_address"){type = NavType.StringType})
-                        ) {
-                            backstackEntry ->
-                            LaunchedEffect(Unit) {
-                                val device: Device? = selectedDevice
-                                if(device == null){
-                                    navController.navigate("scanner")
-                                } else {
-                                    bluetoothViewModel.connectToDevice(device)
-                                }
-                            }
-                            BackHandler {
-                                bluetoothViewModel.disconnectFromDevice()
-                                Log.i("FlightScreen", "Disconnected from device")
-                                navController.navigate("scanner")
-                            }
-                            when {
-                                bluetoothState.isConnecting -> {
-                                    Column(
-                                        modifier = Modifier.fillMaxSize(),
-                                        horizontalAlignment = Alignment.CenterHorizontally,
-                                        verticalArrangement = Arrangement.Center
-                                    ) {
-                                        CircularProgressIndicator()
-                                        Text(text = "Подключение...", textAlign = TextAlign.Center)
-                                    }
-                                }
-
-                                else -> {
-                                    Text(
-                                        text = "Device name: ${backstackEntry.arguments?.getString("device_address")}",
-                                        modifier = Modifier.fillMaxSize(),
-                                        textAlign = TextAlign.Center
+                        composable("device")
+                        {
+                            FlightControlScreen(
+                                bluetoothUiState = bluetoothState,
+                                getPreferences = { preferencesViewModel.preferences },
+                                navigateToScanner = { navController.navigate("scanner") },
+                                connectToDevice = { device ->
+                                    bluetoothViewModel.connectToDevice(
+                                        device
                                     )
-                                }
-                            }
+                                },
+                                sendRotorsState = { message ->
+                                    bluetoothViewModel.sendRotorsDutySpeed(
+                                        message
+                                    )
+                                },
+                                disconnectFromDevice = { bluetoothViewModel.disconnectFromDevice() },
+                                sendEmergStop = { bluetoothViewModel.sendEmergStop() },
+                                sendAlarm = { message -> bluetoothViewModel.sendAlarmState(message) },
+                                sendR3Duty = { duty -> bluetoothViewModel.sendR3Duty(duty) }
+                            )
+                            if (preferencesViewModel.preferences != null) BackHandler {}
                         }
                     }
                 }
@@ -195,33 +154,6 @@ class MainActivity : ComponentActivity() {
         }
 
     }
-    override fun onDestroy() {
-        super.onDestroy()
-        bluetoothViewModel.onDestroy()
-    }
-
-
-    override fun onStart() {
-        super.onStart()
-        bluetoothViewModel.startScan()
-    }
-
-    override fun onStop() {
-        super.onStop()
-        if(!hasAllPermissions()) return
-        bluetoothViewModel.cancelScan()
-        bluetoothViewModel.selectDevice(null)
-    }
-
-    private fun hasAllPermissions(): Boolean {
-        permissionsToRequest.forEach { perm ->
-            if(checkSelfPermission(perm) != PackageManager.PERMISSION_GRANTED){
-                return false
-            }
-        }
-        return true
-    }
-
 }
 
 

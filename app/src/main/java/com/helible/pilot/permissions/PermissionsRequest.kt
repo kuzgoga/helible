@@ -1,4 +1,4 @@
-package com.helible.pilot
+package com.helible.pilot.permissions
 
 import android.Manifest
 import android.app.Activity
@@ -6,7 +6,6 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.provider.Settings
-import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import com.helible.pilot.components.BluetoothAdminPermissionTextProvider
@@ -20,7 +19,7 @@ fun PermissionsRequest(
     visiblePermissionDialogQueue: SnapshotStateList<String>,
     dismissCurrentDialog: () -> Unit,
     activity: Activity,
-    permissionLauncher: ManagedActivityResultLauncher<Array<String>, Map<String, Boolean>>
+    permissionLaunch: (permissions: Array<String>) -> Unit,
 ) {
     /* Create Dialog windows, which requests all permissions */
     visiblePermissionDialogQueue.reversed()
@@ -52,7 +51,7 @@ fun PermissionsRequest(
                 },
                 onOkClick = {
                     dismissCurrentDialog()
-                    permissionLauncher.launch(arrayOf(permission))
+                    permissionLaunch(arrayOf(permission))
                 },
                 onContinueClick = {
                     if (activity.checkSelfPermission(permission) == PackageManager.PERMISSION_GRANTED)

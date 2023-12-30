@@ -1,4 +1,4 @@
-package com.helible.pilot
+package com.helible.pilot.controllers
 
 import android.Manifest
 import android.annotation.SuppressLint
@@ -14,6 +14,11 @@ import android.os.Build
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import com.helible.pilot.BluetoothDataTransferService
+import com.helible.pilot.dataclasses.BluetoothDeviceDomain
+import com.helible.pilot.KMessage
+import com.helible.pilot.receivers.BluetoothAdapterStateReceiver
+import com.helible.pilot.receivers.BluetoothStateReceiver
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -34,8 +39,8 @@ import java.io.IOException
 import java.util.UUID
 
 sealed interface ConnectionResult {
-    object ConnectionEstablished: ConnectionResult
-    data class TransferSucceded(val message: KMessage): ConnectionResult
+    object ConnectionEstablished : ConnectionResult
+    data class TransferSucceded(val message: KMessage) : ConnectionResult
     data class Error(val message: String) : ConnectionResult
 }
 
@@ -44,14 +49,14 @@ interface BluetoothController {
     val isLocationEnabled: StateFlow<Boolean>
     val isConnected: StateFlow<Boolean>
     val isScanning: StateFlow<Boolean>
-    val scannedDevices: StateFlow<List<Device>>
-    val pairedDevices: StateFlow<List<Device>>
+    val scannedDevices: StateFlow<List<BluetoothDeviceDomain>>
+    val pairedDevices: StateFlow<List<BluetoothDeviceDomain>>
     val errors: SharedFlow<String>
 
     fun startDiscovery()
     fun cancelDiscovery()
-    fun connectToDevice(device: Device?): Flow<ConnectionResult>
-    suspend fun trySendMessage(message: KMessage): KMessage?
+    fun connectToDevice(device: String): Flow<ConnectionResult>
+    suspend fun trySendMessage(message: ByteArray): Boolean
     fun closeConnection()
     fun onDestroy()
 }
@@ -92,12 +97,13 @@ class AndroidBluetoothController(private val context: Context) : BluetoothContro
     override val isLocationEnabled: StateFlow<Boolean>
         get() = _isLocationEnabled.asStateFlow()
 
-    private val _pairedDevices = MutableStateFlow<List<Device>>(emptyList())
-    override val pairedDevices: StateFlow<List<Device>>
+    private val _pairedDevices = MutableStateFlow<List<BluetoothDeviceDomain>>(emptyList())
+    override val pairedDevices: StateFlow<List<BluetoothDeviceDomain>>
         get() = _pairedDevices.asStateFlow()
 
-    private val _scannedDevices: MutableStateFlow<List<Device>> = MutableStateFlow(emptyList())
-    override val scannedDevices: StateFlow<List<Device>>
+    private val _scannedDevices: MutableStateFlow<List<BluetoothDeviceDomain>> =
+        MutableStateFlow(emptyList())
+    override val scannedDevices: StateFlow<List<BluetoothDeviceDomain>>
         get() = _scannedDevices.asStateFlow()
 
     private var currentClientSocket: BluetoothSocket? = null
@@ -113,7 +119,7 @@ class AndroidBluetoothController(private val context: Context) : BluetoothContro
             _isScanning.update { isDiscovering }
         },
         onLocationEnabledChanged = {
-            if(locationManager?.isLocationEnabled == true){
+            if (locationManager?.isLocationEnabled == true) {
                 _isLocationEnabled.update { true }
             } else {
                 _isLocationEnabled.update { false }
@@ -124,10 +130,11 @@ class AndroidBluetoothController(private val context: Context) : BluetoothContro
     @SuppressLint("MissingPermission")
     private val bluetoothStateReceiver = BluetoothStateReceiver(
         onDeviceFound = { device, rssi ->
-            if(!hasAllPermissions()) return@BluetoothStateReceiver
-            val newDevice = Device(device, rssi)
+            if (!hasAllPermissions()) return@BluetoothStateReceiver
+            val newDevice =
+                BluetoothDeviceDomain(device.name ?: "null", device.address, rssi, isScanned = true)
             _scannedDevices.update { devices ->
-                if(newDevice in devices) devices else devices + newDevice
+                if (newDevice in devices) devices else devices + newDevice
             }
             Log.i(
                 "ScanActivity",
@@ -135,7 +142,7 @@ class AndroidBluetoothController(private val context: Context) : BluetoothContro
             )
         },
         onConnectedStateChanged = { isConnected, device ->
-            if(bluetoothAdapter?.bondedDevices?.contains(device) == true) {
+            if (bluetoothAdapter?.bondedDevices?.contains(device) == true) {
                 _isConnected.update { isConnected }
             } else {
                 CoroutineScope(Dispatchers.IO).launch {
@@ -160,7 +167,7 @@ class AndroidBluetoothController(private val context: Context) : BluetoothContro
                 addAction(BluetoothAdapter.ACTION_STATE_CHANGED)
                 addAction(BluetoothAdapter.ACTION_DISCOVERY_STARTED)
                 addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED)
-                if(Build.VERSION.SDK_INT <= Build.VERSION_CODES.R) {
+                if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.R) {
                     addAction(LocationManager.PROVIDERS_CHANGED_ACTION)
                 }
             }
@@ -178,43 +185,44 @@ class AndroidBluetoothController(private val context: Context) : BluetoothContro
 
     @SuppressLint("MissingPermission")
     override fun startDiscovery() {
-        if(!hasAllPermissions()) {
+        if (!hasAllPermissions()) {
             Toast.makeText(context, "Ошибка: недостаточно разрешений", Toast.LENGTH_SHORT).show()
             return
         }
-        if(!_isEnabled.value) {
+        if (!_isEnabled.value) {
             return
         }
-        if(Build.VERSION.SDK_INT <= Build.VERSION_CODES.R) {
-            if(locationManager?.isLocationEnabled != true) return
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.R) {
+            if (locationManager?.isLocationEnabled != true) return
         }
 
         updatePairedDevices()
         _scannedDevices.update { emptyList() }
 
-        if(!bluetoothAdapter.isDiscovering) {
+        if (!bluetoothAdapter.isDiscovering) {
             bluetoothAdapter.startDiscovery()
         }
     }
 
     @SuppressLint("MissingPermission")
     override fun cancelDiscovery() {
-        if(!hasAllPermissions()) return
-        if(bluetoothAdapter.isDiscovering){
+        if (!hasAllPermissions()) return
+        if (bluetoothAdapter.isDiscovering) {
             bluetoothAdapter.cancelDiscovery()
         }
     }
 
     @SuppressLint("MissingPermission")
-    override fun connectToDevice(device: Device?): Flow<ConnectionResult> {
-        if(!hasAllPermissions()){
+    override fun connectToDevice(device: String): Flow<ConnectionResult> {
+        if (!hasAllPermissions()) {
             Toast.makeText(context, "Ошибка: нет разрешений", Toast.LENGTH_SHORT).show()
             return flow {}
         }
         return flow {
-            currentClientSocket = device?.bluetoothDevice?.createRfcommSocketToServiceRecord(
-                UUID.fromString(SERVICE_UUID)
-            )
+            currentClientSocket =
+                bluetoothAdapter.getRemoteDevice(device).createRfcommSocketToServiceRecord(
+                    UUID.fromString(SERVICE_UUID)
+                )
             currentClientSocket?.let { socket ->
                 try {
                     socket.connect()
@@ -223,7 +231,7 @@ class AndroidBluetoothController(private val context: Context) : BluetoothContro
                         dataTransferService = it
                         emitAll(
                             it.listenForIncomingMessages()
-                                .map {ConnectionResult.TransferSucceded(it)}
+                                .map { ConnectionResult.TransferSucceded(it) }
                         )
                     }
                 } catch (e: IOException) {
@@ -234,15 +242,15 @@ class AndroidBluetoothController(private val context: Context) : BluetoothContro
         }.onCompletion { closeConnection() }.flowOn(Dispatchers.IO)
     }
 
-    override suspend fun trySendMessage(message: KMessage): KMessage? {
-        if(!hasAllPermissions()){
-            return null
+    override suspend fun trySendMessage(message: ByteArray): Boolean {
+        if (!hasAllPermissions()) {
+            return false
         }
-        if(dataTransferService == null) {
-            return null
+        if (dataTransferService == null) {
+            return false
         }
-        dataTransferService?.sendMessage("R1250\n\r".toByteArray())
-        return message
+        dataTransferService?.sendMessage(message)
+        return true
     }
 
     override fun closeConnection() {
@@ -258,11 +266,16 @@ class AndroidBluetoothController(private val context: Context) : BluetoothContro
 
     @SuppressLint("MissingPermission")
     private fun updatePairedDevices() {
-        if(!hasAllPermissions()) return
+        if (!hasAllPermissions()) return
         Log.i("ScanActivity", "${bluetoothAdapter?.bondedDevices}")
         bluetoothAdapter?.bondedDevices?.onEach { device ->
             _pairedDevices.update {
-                val currentDevice = Device(bluetoothDevice = device, rssi=0, isPaired = true)
+                val currentDevice = BluetoothDeviceDomain(
+                    name = device.name ?: "null",
+                    macAddress = device.address,
+                    rssi = 0,
+                    isScanned = false
+                )
                 if (currentDevice in pairedDevices.value) {
                     pairedDevices.value
                 } else {
@@ -284,7 +297,7 @@ class AndroidBluetoothController(private val context: Context) : BluetoothContro
             )
         }
         perms.forEach { perm ->
-            if(context.checkSelfPermission(perm) != PackageManager.PERMISSION_GRANTED){
+            if (context.checkSelfPermission(perm) != PackageManager.PERMISSION_GRANTED) {
                 return false
             }
         }

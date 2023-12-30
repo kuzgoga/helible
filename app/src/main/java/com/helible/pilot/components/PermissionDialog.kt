@@ -23,7 +23,7 @@ fun PermissionDialog(
     onOkClick: () -> Unit,
     onContinueClick: () -> Unit,
     onGoToAppSettingsClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -39,39 +39,44 @@ fun PermissionDialog(
                     } else {
                         "OK"
                     },
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable {
-                        if (isPermanentDeclined) {
-                            onGoToAppSettingsClick()
-                        } else {
-                            onOkClick()
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            if (isPermanentDeclined) {
+                                onGoToAppSettingsClick()
+                            } else {
+                                onOkClick()
+                            }
                         }
-                    }
-                    .padding(16.dp)
+                        .padding(16.dp)
                 )
             }
         },
-        dismissButton = {if(isPermanentDeclined)
-                Box(modifier=Modifier.fillMaxWidth()){
+        dismissButton = {
+            if (isPermanentDeclined)
+                Box(modifier = Modifier.fillMaxWidth()) {
                     Divider()
                     Text(
-                    text = "Снова проверить наличие разрешения",
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(paddingValues = PaddingValues(top=10.dp))
-                        .clickable {onContinueClick()},
-                    fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center
-                )}
+                        text = "Снова проверить наличие разрешения",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(paddingValues = PaddingValues(top = 10.dp))
+                            .clickable { onContinueClick() },
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center
+                    )
+                }
             else
-                Unit},
+                Unit
+        },
         text = {
-            Text(text = permissionTextProvider.getDescription(
-                isPermanentDeclined = isPermanentDeclined
-            ))
+            Text(
+                text = permissionTextProvider.getDescription(
+                    isPermanentDeclined = isPermanentDeclined
+                )
+            )
         },
         modifier = modifier
     )
@@ -83,21 +88,21 @@ interface PermissionTextProvider {
 
 class LocationPermissionTextProvider : PermissionTextProvider {
     override fun getDescription(isPermanentDeclined: Boolean): String {
-        return if (isPermanentDeclined){
+        return if (isPermanentDeclined) {
             "Похоже вы навсегда запретили приложению доступ к геолокации. " +
                     "Вы можете зайти в настройки, чтобы выдать это разрешение."
         } else {
             "Приложению необходимо разрешение для определения местоположения " +
-             "для работы с Bluetooth на устройствах с Android 11 и ниже."
+                    "для работы с Bluetooth на устройствах с Android 11 и ниже."
         }
     }
 }
 
 class BluetoothScanPermissionTextProvider : PermissionTextProvider {
     override fun getDescription(isPermanentDeclined: Boolean): String {
-        return if (isPermanentDeclined){
-        "Похоже вы навсегда запретили приложению доступ к сканированию по Bluetooth. " +
-                "Вы можете зайти в настройки, чтобы выдать это разрешение."
+        return if (isPermanentDeclined) {
+            "Похоже вы навсегда запретили приложению доступ к сканированию по Bluetooth. " +
+                    "Вы можете зайти в настройки, чтобы выдать это разрешение."
         } else {
             "Приложению необходимо разрешение для к сканированию по Bluetooth " +
                     "для работы с Bluetooth на устройствах с Android 11 и ниже"
@@ -107,7 +112,7 @@ class BluetoothScanPermissionTextProvider : PermissionTextProvider {
 
 class BluetoothConnectPermissionTextProvider : PermissionTextProvider {
     override fun getDescription(isPermanentDeclined: Boolean): String {
-        return if (isPermanentDeclined){
+        return if (isPermanentDeclined) {
             "Похоже вы навсегда запретили приложению доступ к подключению по Bluetooth." +
                     "Вы можете зайти в настройки, чтобы выдать это разрешение."
         } else {
@@ -119,7 +124,7 @@ class BluetoothConnectPermissionTextProvider : PermissionTextProvider {
 
 class BluetoothAdminPermissionTextProvider : PermissionTextProvider {
     override fun getDescription(isPermanentDeclined: Boolean): String {
-        return if (isPermanentDeclined){
+        return if (isPermanentDeclined) {
             "Похоже вы навсегда запретили приложению доступ к управлению настройками Bluetooth. " +
                     "Вы можете зайти в настройки, чтобы выдать это разрешение."
         } else {

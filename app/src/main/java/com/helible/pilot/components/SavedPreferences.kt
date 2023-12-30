@@ -1,37 +1,41 @@
 package com.helible.pilot.components
 
 import android.content.SharedPreferences
-import android.os.Parcelable
-import com.google.gson.Gson
-import kotlinx.parcelize.Parcelize
+import com.squareup.moshi.JsonAdapter
+import com.squareup.moshi.JsonClass
+import com.squareup.moshi.Moshi
+import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 
+@JsonClass(generateAdapter = true)
+data class AppPreferences(
+    val deviceName: String,
+    val deviceAddress: String,
+)
 
-@Parcelize
-data class SavedPreferences(
-    val deviceAddress: String?
-): Parcelable
-
-interface SavedPreferencesCache {
-    fun getPreferences(): SavedPreferences?
-    fun savePreferences(preferences: SavedPreferences)
+interface SavedPreferences {
+    fun getPreferences(): AppPreferences?
+    fun savePreferences(preferences: AppPreferences)
     fun clearPreferences()
 }
 
-class PreferencesCacheImpl(private val sharedPreferences: SharedPreferences) : SavedPreferencesCache {
-    override fun getPreferences(): SavedPreferences? {
+class SavedPreferencesImpl(private val sharedPreferences: SharedPreferences) : SavedPreferences {
+    private val moshi: Moshi = Moshi.Builder().addLast(KotlinJsonAdapterFactory()).build()
+    private val preferencesAdapter: JsonAdapter<AppPreferences> =
+        moshi.adapter(AppPreferences::class.java)
+
+    override fun getPreferences(): AppPreferences? {
         val json = sharedPreferences.getString("preferences", null) ?: return null
-        return Gson().fromJson(json, SavedPreferences::class.java)
+        return preferencesAdapter.fromJson(json)
     }
-    override fun savePreferences(preferences: SavedPreferences)
-    {
+
+    override fun savePreferences(preferences: AppPreferences) {
         sharedPreferences.edit()
-            .putString("preferences", Gson().toJson(preferences))
+            .putString("preferences", preferencesAdapter.toJson(preferences))
             .apply()
 
     }
 
-    override fun clearPreferences()
-    {
+    override fun clearPreferences() {
         sharedPreferences.edit().remove("preferences").apply()
     }
 }

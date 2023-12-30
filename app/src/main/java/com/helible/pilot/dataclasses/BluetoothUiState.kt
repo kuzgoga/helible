@@ -1,6 +1,5 @@
-package com.helible.pilot
+package com.helible.pilot.dataclasses
 
-import android.bluetooth.BluetoothDevice
 data class BluetoothUiState(
     val isEnabled: Boolean = false,
     val isLocationEnabled: Boolean = false,
@@ -8,6 +7,6 @@ data class BluetoothUiState(
     val isConnected: Boolean = false,
     val isConnecting: Boolean = false,
     val errorMessage: String? = null,
-    val scannedDevices: List<Device> = emptyList(),
-    val pairedDevices: List<Device> = emptyList(),
+    val scannedBluetoothDevices: List<BluetoothDevice> = emptyList(),
+    val pairedBluetoothDevices: List<BluetoothDevice> = emptyList(),
 )
