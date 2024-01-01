@@ -1,4 +1,4 @@
-package com.helible.pilot.components
+package com.helible.pilot.components.scannerScreen
 
 import android.annotation.SuppressLint
 import androidx.compose.foundation.clickable
@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
@@ -19,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.helible.pilot.dataclasses.BluetoothDevice
 import com.helible.pilot.R
@@ -42,7 +44,7 @@ fun DeviceItem(
         )
     ) {
         Row(modifier = Modifier.padding(8.dp)) {
-            Column(verticalArrangement = Arrangement.Center) {
+            Column(verticalArrangement = Arrangement.Center, modifier = Modifier.fillMaxHeight()) {
                 Text(
                     text = deviceInfo.name,
                     fontWeight = FontWeight.Bold,
@@ -74,4 +76,15 @@ fun getSignalIconForRssiValue(rssi: Short): Int {
     else if (rssi >= -90) return R.drawable.signal_icon3
     else if (rssi >= -100) return R.drawable.signal_icon2
     return R.drawable.signal_icon1
+}
+
+@Preview
+@Composable
+fun DeviceItemPreview() {
+    DeviceItem(
+        BluetoothDevice("Helicopter", "AA:BB:CC:DD:FF", -90, true),
+        null,
+        {_ ->  },
+        modifier = Modifier.size(500.dp, 60.dp)
+    )
 }

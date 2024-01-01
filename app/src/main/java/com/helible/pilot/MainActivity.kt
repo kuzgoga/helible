@@ -15,10 +15,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.helible.pilot.components.BluetoothScannerScreen
-import com.helible.pilot.components.FlightControlScreen
-import com.helible.pilot.components.AppPreferences
-import com.helible.pilot.components.SavedPreferencesImpl
+import com.helible.pilot.components.scannerScreen.BluetoothScannerScreen
+import com.helible.pilot.components.deviceScreen.DeviceControlScreen
+import com.helible.pilot.viewmodels.AppPreferences
+import com.helible.pilot.viewmodels.SavedPreferencesImpl
+import com.helible.pilot.components.deviceScreen.defaultDeviceActionsList
 import com.helible.pilot.permissions.PermissionsLauncher
 import com.helible.pilot.permissions.PermissionsRequest
 import com.helible.pilot.permissions.RequestHardwareFeatures
@@ -31,8 +32,10 @@ import com.helible.pilot.viewmodels.PreferencesViewModel
 
 class MainActivity : ComponentActivity() {
     // TODO: device screen logic
+    // TODO: constrain text size
     // TODO: add Bluetooth telemetry...
     // TODO: move text strings to resources
+    // TODO: review permissions logic
 
     private val preferences by lazy {
         SavedPreferencesImpl(getSharedPreferences(packageName, MODE_PRIVATE))
@@ -127,32 +130,48 @@ class MainActivity : ComponentActivity() {
                         }
                         composable("device")
                         {
-                            FlightControlScreen(
+                            DeviceControlScreen(
                                 bluetoothUiState = bluetoothState,
                                 getPreferences = { preferencesViewModel.preferences },
-                                navigateToScanner = { navController.navigate("scanner") },
+                                navigateToPage = { page -> navController.navigate(page) },
                                 connectToDevice = { device ->
                                     bluetoothViewModel.connectToDevice(
                                         device
                                     )
                                 },
-                                sendRotorsState = { message ->
-                                    bluetoothViewModel.sendRotorsDutySpeed(
-                                        message
-                                    )
-                                },
                                 disconnectFromDevice = { bluetoothViewModel.disconnectFromDevice() },
-                                sendEmergStop = { bluetoothViewModel.sendEmergStop() },
-                                sendAlarm = { message -> bluetoothViewModel.sendAlarmState(message) },
-                                sendR3Duty = { duty -> bluetoothViewModel.sendR3Duty(duty) }
+                                deviceActionsList = defaultDeviceActionsList()
                             )
                             if (preferencesViewModel.preferences != null) BackHandler {}
+                        }
+                        composable("console")
+                        {
+
+                        }
+                        composable("codeblocks")
+                        {
+
+                        }
+                        composable("imu_calibration")
+                        {
+
+                        }
+                        composable("motor_test")
+                        {
+
+                        }
+                        composable("pid_settings")
+                        {
+
+                        }
+                        composable("reports")
+                        {
+
                         }
                     }
                 }
             }
         }
-
     }
 }
 

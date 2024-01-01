@@ -1,4 +1,4 @@
-package com.helible.pilot.components
+package com.helible.pilot.components.scannerScreen
 
 import android.annotation.SuppressLint
 import android.util.Log
@@ -21,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
+import com.helible.pilot.components.Title
 import com.helible.pilot.dataclasses.BluetoothUiState
 import com.helible.pilot.dataclasses.BluetoothDevice
 
@@ -103,7 +104,6 @@ fun BluetoothScannerScreen(
                     Text(text = "Далее")
                 }
             }
-
         }
     }
 }

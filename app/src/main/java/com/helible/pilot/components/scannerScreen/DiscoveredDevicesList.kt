@@ -1,4 +1,4 @@
-package com.helible.pilot.components
+package com.helible.pilot.components.scannerScreen
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.helible.pilot.components.scannerScreen.DeviceItem
 import com.helible.pilot.dataclasses.BluetoothUiState
 import com.helible.pilot.dataclasses.BluetoothDevice
 

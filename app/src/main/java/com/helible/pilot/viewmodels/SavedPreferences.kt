@@ -1,4 +1,4 @@
-package com.helible.pilot.components
+package com.helible.pilot.viewmodels
 
 import android.content.SharedPreferences
 import com.squareup.moshi.JsonAdapter

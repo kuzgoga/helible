@@ -57,24 +57,24 @@ class BluetoothViewModel(
                 it.copy(errorMessage = error)
             }
         }.launchIn(viewModelScope)
-        bluetoothController.isScanning.onEach { result ->
+        bluetoothController.isScanning.onEach { isDiscovering ->
             _state.update {
                 it.copy(
-                    isDiscovering = result,
+                    isDiscovering = isDiscovering,
                 )
             }
         }.launchIn(viewModelScope)
-        bluetoothController.isEnabled.onEach { result ->
+        bluetoothController.isEnabled.onEach { isEnabled ->
             _state.update {
                 it.copy(
-                    isEnabled = result,
+                    isEnabled = isEnabled,
                 )
             }
         }.launchIn(viewModelScope)
-        bluetoothController.isLocationEnabled.onEach { result ->
+        bluetoothController.isLocationEnabled.onEach { isLocationEnabled ->
             _state.update {
                 it.copy(
-                    isLocationEnabled = result
+                    isLocationEnabled = isLocationEnabled
                 )
             }
         }.launchIn(viewModelScope)
@@ -123,6 +123,9 @@ class BluetoothViewModel(
     private var deviceConnectionJob: Job? = null
 
     fun connectToDevice(device: String) {
+        if(_state.value.isConnected) {
+            return
+        }
         _state.update { it.copy(isConnecting = true) }
         deviceConnectionJob = bluetoothController
             .connectToDevice(device)

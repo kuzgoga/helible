@@ -14,6 +14,6 @@ fun Title(text: String, modifier: Modifier = Modifier) {
         textAlign = TextAlign.Center,
         modifier = modifier,
         fontSize = 23.sp,
-        fontWeight = FontWeight.Bold
+        fontWeight = FontWeight.ExtraBold
     )
 }
