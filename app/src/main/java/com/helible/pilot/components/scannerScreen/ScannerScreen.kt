@@ -18,6 +18,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
@@ -28,7 +29,7 @@ import com.helible.pilot.dataclasses.BluetoothDevice
 
 @SuppressLint("MissingPermission")
 @Composable
-fun BluetoothScannerScreen(
+fun ScannerScreen(
     bluetoothState: BluetoothUiState,
     selectedDevice: BluetoothDevice?,
     startScan: () -> Unit,
@@ -105,5 +106,34 @@ fun BluetoothScannerScreen(
                 }
             }
         }
+    }
+}
+
+@Preview
+@Composable
+fun ScannerScreenPreview() {
+    val state = BluetoothUiState(
+        pairedBluetoothDevices = listOf(
+            BluetoothDevice("My car", "AA:BB:CC:DD:FF", -70, false),
+            BluetoothDevice("Speaker", "AA:BB:CC:DD:FF", -20, false),
+            BluetoothDevice("My TV", "AA:BB:CC:DD:FF", 10, false),
+            BluetoothDevice("My phone", "AA:BB:CC:DD:FF", -50, false),
+            BluetoothDevice("Mi Band 6", "AA:BB:CC:DD:FF", -100, false),
+        ),
+        scannedBluetoothDevices = listOf(
+            BluetoothDevice("Watch", "AA:BB:CC:DD:FF", -10, true),
+            BluetoothDevice("Mi Cleaner", "AA:BB:CC:DD:FF", -90, true),
+            BluetoothDevice("My fridge", "AA:BB:CC:DD:FF", -100, true),
+            BluetoothDevice("Unknown device", "AA:BB:CC:DD:FF", -130, true)
+        )
+    )
+    Surface {
+        ScannerScreen(
+            state,
+            state.scannedBluetoothDevices[1],
+            {}, {},
+            {_ -> },
+            {},
+        )
     }
 }

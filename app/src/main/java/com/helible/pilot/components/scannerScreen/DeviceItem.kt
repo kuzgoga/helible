@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.CardDefaults
@@ -22,8 +21,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.helible.pilot.dataclasses.BluetoothDevice
 import com.helible.pilot.R
+import com.helible.pilot.dataclasses.BluetoothDevice
+
 
 @SuppressLint("MissingPermission")
 @Composable
@@ -44,7 +44,9 @@ fun DeviceItem(
         )
     ) {
         Row(modifier = Modifier.padding(8.dp)) {
-            Column(verticalArrangement = Arrangement.Center, modifier = Modifier.fillMaxHeight()) {
+            Column(verticalArrangement = Arrangement.Center,
+                modifier = Modifier.fillMaxHeight().weight(1f, true)
+            ) {
                 Text(
                     text = deviceInfo.name,
                     fontWeight = FontWeight.Bold,
@@ -56,9 +58,10 @@ fun DeviceItem(
                 )
             }
             if (deviceInfo.isScanned) {
-                Box(contentAlignment = Alignment.CenterEnd, modifier = Modifier.fillMaxSize()) {
+                val icon = getSignalIconForRssiValue(deviceInfo.rssi)
+                Box(contentAlignment = Alignment.CenterEnd, modifier = Modifier.weight(0.3f)) {
                     Icon(
-                        painterResource(id = getSignalIconForRssiValue(deviceInfo.rssi)),
+                        painterResource(id = icon),
                         contentDescription = null,
                         modifier = Modifier
                             .fillMaxHeight()

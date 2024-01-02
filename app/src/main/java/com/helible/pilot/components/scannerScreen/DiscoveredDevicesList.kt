@@ -7,14 +7,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.helible.pilot.components.scannerScreen.DeviceItem
 import com.helible.pilot.dataclasses.BluetoothUiState
 import com.helible.pilot.dataclasses.BluetoothDevice
 
@@ -100,5 +101,28 @@ fun DiscoveredDevicesList(
                 }
             }
         }
+    }
+}
+
+@Preview
+@Composable
+fun DiscoveredDevicesListPreview() {
+    val state = BluetoothUiState(
+        pairedBluetoothDevices = listOf(
+            BluetoothDevice("My car", "AA:BB:CC:DD:FF", -70, false),
+            BluetoothDevice("Speaker", "AA:BB:CC:DD:FF", -20, false),
+            BluetoothDevice("My TV", "AA:BB:CC:DD:FF", 10, false),
+            BluetoothDevice("My phone", "AA:BB:CC:DD:FF", -50, false),
+            BluetoothDevice("Mi Band 6", "AA:BB:CC:DD:FF", -100, false),
+        ),
+        scannedBluetoothDevices = listOf(
+            BluetoothDevice("Watch", "AA:BB:CC:DD:FF", -10, true),
+            BluetoothDevice("Mi Cleaner", "AA:BB:CC:DD:FF", -90, true),
+            BluetoothDevice("My fridge", "AA:BB:CC:DD:FF", -100, true),
+            BluetoothDevice("Unknown device", "AA:BB:CC:DD:FF", -130, true)
+        )
+    )
+    Surface {
+        DiscoveredDevicesList(bluetoothState = state, selectedDevice = null, choiceDevice = {})
     }
 }

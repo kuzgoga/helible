@@ -15,7 +15,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.helible.pilot.components.scannerScreen.BluetoothScannerScreen
+import com.helible.pilot.components.scannerScreen.ScannerScreen
 import com.helible.pilot.components.deviceScreen.DeviceControlScreen
 import com.helible.pilot.viewmodels.AppPreferences
 import com.helible.pilot.viewmodels.SavedPreferencesImpl
@@ -101,7 +101,7 @@ class MainActivity : ComponentActivity() {
                         startDestination = "device"
                     ) {
                         composable("scanner") {
-                            BluetoothScannerScreen(
+                            ScannerScreen(
                                 bluetoothState = bluetoothState,
                                 selectedDevice = selectedDevice,
                                 startScan = { bluetoothViewModel.startScan() },
