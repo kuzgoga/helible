@@ -2,12 +2,13 @@ package com.helible.pilot.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.helible.pilot.controllers.BluetoothController
+import com.helible.pilot.controllers.ConnectionResult
 import com.helible.pilot.dataclasses.AlarmStateMessage
+import com.helible.pilot.dataclasses.BluetoothDevice
 import com.helible.pilot.dataclasses.BluetoothUiState
 import com.helible.pilot.dataclasses.EmergStopMessage
 import com.helible.pilot.dataclasses.RotorsSpeedMessage
-import com.helible.pilot.controllers.BluetoothController
-import com.helible.pilot.controllers.ConnectionResult
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import kotlinx.coroutines.Job
@@ -24,7 +25,6 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import com.helible.pilot.dataclasses.BluetoothDevice
 
 class BluetoothViewModel(
     private val bluetoothController: BluetoothController,
@@ -123,7 +123,7 @@ class BluetoothViewModel(
     private var deviceConnectionJob: Job? = null
 
     fun connectToDevice(device: String) {
-        if(_state.value.isConnected) {
+        if (_state.value.isConnected) {
             return
         }
         _state.update { it.copy(isConnecting = true) }

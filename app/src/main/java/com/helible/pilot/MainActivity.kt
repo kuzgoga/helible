@@ -15,19 +15,19 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.helible.pilot.components.scannerScreen.ScannerScreen
 import com.helible.pilot.components.deviceScreen.DeviceControlScreen
-import com.helible.pilot.viewmodels.AppPreferences
-import com.helible.pilot.viewmodels.SavedPreferencesImpl
 import com.helible.pilot.components.deviceScreen.defaultDeviceActionsList
+import com.helible.pilot.components.scannerScreen.ScannerScreen
 import com.helible.pilot.permissions.PermissionsLauncher
 import com.helible.pilot.permissions.PermissionsRequest
 import com.helible.pilot.permissions.RequestHardwareFeatures
 import com.helible.pilot.ui.theme.TestblueTheme
+import com.helible.pilot.viewmodels.AppPreferences
 import com.helible.pilot.viewmodels.BluetoothViewModel
 import com.helible.pilot.viewmodels.BluetoothViewModelFactory
 import com.helible.pilot.viewmodels.PermissionDialogViewModel
 import com.helible.pilot.viewmodels.PreferencesViewModel
+import com.helible.pilot.viewmodels.SavedPreferencesImpl
 
 
 class MainActivity : ComponentActivity() {
@@ -144,29 +144,47 @@ class MainActivity : ComponentActivity() {
                             )
                             if (preferencesViewModel.preferences != null) BackHandler {}
                         }
-                        composable("console")
-                        {
-
+                        composable("console/{title}")
+                        { backStackEntry ->
+                            NotImplementedPage(
+                                title = backStackEntry.arguments?.getString("title") ?: "null",
+                                navigateBack = { navController.popBackStack() }
+                            )
                         }
-                        composable("codeblocks")
-                        {
-
+                        composable("codeblocks/{title}")
+                        { backStackEntry ->
+                            NotImplementedPage(
+                                title = backStackEntry.arguments?.getString("title") ?: "null",
+                                navigateBack = { navController.popBackStack() }
+                            )
                         }
-                        composable("imu_calibration")
-                        {
-
+                        composable("imu_calibration/{title}")
+                        { backStackEntry ->
+                            NotImplementedPage(
+                                title = backStackEntry.arguments?.getString("title") ?: "null",
+                                navigateBack = { navController.popBackStack() }
+                            )
                         }
-                        composable("motor_test")
-                        {
-
+                        composable("motor_test/{title}")
+                        { backStackEntry ->
+                            NotImplementedPage(
+                                title = backStackEntry.arguments?.getString("title") ?: "null",
+                                navigateBack = { navController.popBackStack() }
+                            )
                         }
-                        composable("pid_settings")
-                        {
-
+                        composable("pid_settings/{title}")
+                        { backStackEntry ->
+                            NotImplementedPage(
+                                title = backStackEntry.arguments?.getString("title") ?: "null",
+                                navigateBack = { navController.popBackStack() }
+                            )
                         }
-                        composable("reports")
-                        {
-
+                        composable("reports/{title}")
+                        { backStackEntry ->
+                            NotImplementedPage(
+                                title = backStackEntry.arguments?.getString("title") ?: "null",
+                                navigateBack = { navController.popBackStack() }
+                            )
                         }
                     }
                 }

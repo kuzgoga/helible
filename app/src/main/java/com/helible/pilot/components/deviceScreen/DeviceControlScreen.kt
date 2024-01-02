@@ -1,20 +1,9 @@
 package com.helible.pilot.components.deviceScreen
 
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -22,10 +11,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -57,14 +44,14 @@ fun DeviceControlScreen(
     LaunchedEffect(key1 = bluetoothUiState.isEnabled) {
         /* Trying to reconnect, when bluetooth is turned on */
         val preferences = getPreferences()
-        if(preferences != null && bluetoothUiState.isEnabled)
+        if (preferences != null && bluetoothUiState.isEnabled)
             connectToDevice(preferences.deviceAddress)
     }
 
     LaunchedEffect(key1 = bluetoothUiState.isLocationEnabled) {
         /* Trying to reconnect, when location is turned on */
         val preferences = getPreferences()
-        if(preferences != null && bluetoothUiState.isLocationEnabled)
+        if (preferences != null && bluetoothUiState.isLocationEnabled)
             connectToDevice(preferences.deviceAddress)
     }
 
@@ -82,7 +69,7 @@ fun DeviceControlScreen(
             tryToReconnect = {
                 /* Trying to reconnect, when error occurred */
                 val preferences = getPreferences()
-                if(preferences != null)
+                if (preferences != null)
                     connectToDevice(preferences.deviceAddress)
             },
             getPreferences = getPreferences
@@ -90,13 +77,16 @@ fun DeviceControlScreen(
 
         Column(modifier = Modifier.padding(horizontal = 3.dp)) {
             for (section in deviceActionsList) {
-                Text(section.key,
+                Text(
+                    section.key,
                     color = Color.Gray,
                     fontWeight = FontWeight.Light,
                     modifier = Modifier.padding(vertical = 15.dp, horizontal = 10.dp)
                 )
                 for (action in section.value) {
-                    TextButton(onClick = { /* TODO */}) {
+                    TextButton(
+                        onClick = { navigateToPage(action.first + '/' + action.second.second) }
+                    ) {
                         Icon(
                             painter = painterResource(id = action.second.first.first),
                             tint = action.second.first.second,

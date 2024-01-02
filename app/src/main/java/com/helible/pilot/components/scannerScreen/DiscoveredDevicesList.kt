@@ -16,8 +16,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.helible.pilot.dataclasses.BluetoothUiState
 import com.helible.pilot.dataclasses.BluetoothDevice
+import com.helible.pilot.dataclasses.BluetoothUiState
 
 @Composable
 fun DiscoveredDevicesList(

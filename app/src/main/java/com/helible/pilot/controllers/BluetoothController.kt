@@ -15,8 +15,8 @@ import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import com.helible.pilot.BluetoothDataTransferService
-import com.helible.pilot.dataclasses.BluetoothDeviceDomain
 import com.helible.pilot.KMessage
+import com.helible.pilot.dataclasses.BluetoothDeviceDomain
 import com.helible.pilot.receivers.BluetoothAdapterStateReceiver
 import com.helible.pilot.receivers.BluetoothStateReceiver
 import kotlinx.coroutines.CoroutineScope

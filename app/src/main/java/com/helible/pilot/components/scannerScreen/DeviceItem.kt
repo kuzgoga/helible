@@ -44,8 +44,11 @@ fun DeviceItem(
         )
     ) {
         Row(modifier = Modifier.padding(8.dp)) {
-            Column(verticalArrangement = Arrangement.Center,
-                modifier = Modifier.fillMaxHeight().weight(1f, true)
+            Column(
+                verticalArrangement = Arrangement.Center,
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .weight(1f, true)
             ) {
                 Text(
                     text = deviceInfo.name,
@@ -87,7 +90,7 @@ fun DeviceItemPreview() {
     DeviceItem(
         BluetoothDevice("Helicopter", "AA:BB:CC:DD:FF", -90, true),
         null,
-        {_ ->  },
+        { _ -> },
         modifier = Modifier.size(500.dp, 60.dp)
     )
 }

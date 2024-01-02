@@ -32,7 +32,7 @@ import com.helible.pilot.viewmodels.AppPreferences
 fun DeviceBadge(
     bluetoothUiState: BluetoothUiState,
     tryToReconnect: () -> Unit,
-    getPreferences: () -> AppPreferences?
+    getPreferences: () -> AppPreferences?,
 ) {
     ElevatedCard(
         modifier = Modifier
@@ -91,6 +91,6 @@ fun DeviceBadgePreview() {
     DeviceBadge(
         bluetoothUiState = BluetoothUiState(isConnected = true),
         tryToReconnect = {},
-        getPreferences = {AppPreferences("Helicopter", "AA:BB:CC:FF:DD")}
+        getPreferences = { AppPreferences("Helicopter", "AA:BB:CC:FF:DD") }
     )
 }

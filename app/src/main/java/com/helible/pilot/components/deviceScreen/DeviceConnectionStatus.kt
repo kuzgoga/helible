@@ -30,9 +30,8 @@ fun DeviceConnectionStatus(bluetoothState: BluetoothUiState) {
                     .requiredSize(Icons.Default.CheckCircle.defaultWidth)
                     .padding(2.dp)
             )
-            Text ("На связи")
-        }
-        else if (bluetoothState.errorMessage != null) {
+            Text("На связи")
+        } else if (bluetoothState.errorMessage != null) {
             Icon(
                 painter = painterResource(id = R.drawable.cancel),
                 contentDescription = null,
@@ -41,9 +40,8 @@ fun DeviceConnectionStatus(bluetoothState: BluetoothUiState) {
                     .requiredSize(R.drawable.cancel.dp)
                     .padding(2.dp)
             )
-            Text ("Ошибка: ${bluetoothState.errorMessage}")
-        }
-        else if (bluetoothState.isConnecting) {
+            Text("Ошибка: ${bluetoothState.errorMessage}")
+        } else if (bluetoothState.isConnecting) {
             Icon(
                 painter = painterResource(id = R.drawable.sync),
                 contentDescription = null,
@@ -52,7 +50,7 @@ fun DeviceConnectionStatus(bluetoothState: BluetoothUiState) {
                     .requiredSize(R.drawable.sync.dp)
                     .padding(2.dp)
             )
-            Text ("Подключение...")
+            Text("Подключение...")
         }
     }
 }
