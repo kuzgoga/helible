@@ -6,8 +6,10 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -139,7 +141,10 @@ class MainActivity : ComponentActivity() {
                                         device
                                     )
                                 },
-                                disconnectFromDevice = { bluetoothViewModel.disconnectFromDevice() },
+                                disconnectFromDevice = {
+                                    preferencesViewModel.clearPreferences()
+                                    bluetoothViewModel.disconnectFromDevice()
+                                },
                                 deviceActionsList = defaultDeviceActionsList()
                             )
                             if (preferencesViewModel.preferences != null) BackHandler {}
@@ -150,6 +155,9 @@ class MainActivity : ComponentActivity() {
                                 title = backStackEntry.arguments?.getString("title") ?: "null",
                                 navigateBack = { navController.popBackStack() }
                             )
+                            Button(onClick = { bluetoothViewModel.sendHelloWorld() }) {
+                                Text("Click me!")
+                            }
                         }
                         composable("codeblocks/{title}")
                         { backStackEntry ->

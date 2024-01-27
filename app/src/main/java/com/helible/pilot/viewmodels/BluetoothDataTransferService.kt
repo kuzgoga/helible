@@ -1,6 +1,9 @@
-package com.helible.pilot
+package com.helible.pilot.viewmodels
 
 import android.bluetooth.BluetoothSocket
+import android.util.Log
+import com.helible.pilot.KMessage
+import com.helible.pilot.toKMessage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -14,7 +17,7 @@ class TransferFailedException : IOException("Reading incoming data failed")
 class BluetoothDataTransferService(
     private val socket: BluetoothSocket,
 ) {
-    fun listenForIncomingMessages(): Flow<KMessage> {
+    fun listenForIncomingMessages(): Flow<String> {
         return flow {
             if (!socket.isConnected)
                 return@flow
@@ -25,11 +28,11 @@ class BluetoothDataTransferService(
                 } catch (e: IOException) {
                     throw TransferFailedException()
                 }
+                val strData: String = buffer.decodeToString(endIndex = byteCount)
                 emit(
-                    buffer.decodeToString(
-                        endIndex = byteCount
-                    ).toKMessage()
+                    strData
                 )
+                Log.i("BluetoothController", "Received: ${strData.dropLast(2)}")
             }
         }.flowOn(Dispatchers.IO)
     }

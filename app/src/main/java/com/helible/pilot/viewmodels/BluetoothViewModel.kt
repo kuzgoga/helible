@@ -94,7 +94,9 @@ class BluetoothViewModel(
                 }
 
                 is ConnectionResult.TransferSucceded -> {
-                    TODO("Telemetry not implemented")
+                    _state.update { it.copy(
+
+                    ) }
                 }
 
                 is ConnectionResult.Error -> {
@@ -108,14 +110,12 @@ class BluetoothViewModel(
                 }
             }
         }
-            .catch { _ ->
+            .catch { throwable ->
                 bluetoothController.closeConnection()
-                _state.update {
-                    it.copy(
-                        isConnected = false,
-                        isConnecting = false
-                    )
-                }
+                _state.update { it.copy(
+                    isConnected = false,
+                    isConnecting = false
+                ) }
             }
             .launchIn(viewModelScope)
     }
@@ -123,7 +123,7 @@ class BluetoothViewModel(
     private var deviceConnectionJob: Job? = null
 
     fun connectToDevice(device: String) {
-        if (_state.value.isConnected) {
+        if (_state.value.isConnected and _state.value.isConnecting) {
             return
         }
         _state.update { it.copy(isConnecting = true) }
@@ -162,36 +162,12 @@ class BluetoothViewModel(
         super.onCleared()
     }
 
-    fun sendRotorsDutySpeed(rotorsState: RotorsSpeedMessage) {
+    fun sendHelloWorld() {
         viewModelScope.launch {
             bluetoothController.trySendMessage(
-                rotorsStateMessegeAdapter.toJson(rotorsState).plus("\r").toByteArray()
+                "{\"p1\": {\"p\": 1.5, \"i\": 1.5, \"d\": 1.5}}\n\r".toByteArray()
+                //"{\"p1\": [1.5, 1.5, 1.5]}\n\r".toByteArray()
             )
-        }
-    }
-
-    fun sendAlarmState(alarmStateMessage: AlarmStateMessage) {
-        viewModelScope.launch {
-            bluetoothController.trySendMessage(
-                alarmStateMessageAdapter.toJson(alarmStateMessage).plus("\r").toByteArray()
-            )
-        }
-    }
-
-    fun sendEmergStop() {
-        viewModelScope.launch {
-            bluetoothController.trySendMessage(
-                emergStopMessageAdapter.toJson(EmergStopMessage(true)).plus("\r").toByteArray()
-            )
-        }
-    }
-
-    fun sendR3Duty(r3: Int) {
-        viewModelScope.launch {
-            bluetoothController.trySendMessage(
-                "R3$r3\n\r".toByteArray()
-            )
-            delay(30)
         }
     }
 }

@@ -14,7 +14,7 @@ import android.os.Build
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
-import com.helible.pilot.BluetoothDataTransferService
+import com.helible.pilot.viewmodels.BluetoothDataTransferService
 import com.helible.pilot.KMessage
 import com.helible.pilot.dataclasses.BluetoothDeviceDomain
 import com.helible.pilot.receivers.BluetoothAdapterStateReceiver
@@ -40,7 +40,7 @@ import java.util.UUID
 
 sealed interface ConnectionResult {
     object ConnectionEstablished : ConnectionResult
-    data class TransferSucceded(val message: KMessage) : ConnectionResult
+    data class TransferSucceded(val message: String) : ConnectionResult
     data class Error(val message: String) : ConnectionResult
 }
 
@@ -219,6 +219,7 @@ class AndroidBluetoothController(private val context: Context) : BluetoothContro
             return flow {}
         }
         return flow {
+            Log.i("BluetoothController", "Connecting to device...")
             currentClientSocket =
                 bluetoothAdapter.getRemoteDevice(device).createRfcommSocketToServiceRecord(
                     UUID.fromString(SERVICE_UUID)
@@ -235,7 +236,9 @@ class AndroidBluetoothController(private val context: Context) : BluetoothContro
                         )
                     }
                 } catch (e: IOException) {
-                    closeConnection()
+                    socket.close()
+                    currentClientSocket = null
+                    Log.e("BluetoothController", e.toString())
                     emit(ConnectionResult.Error("Connection was interrupted"))
                 }
             }
@@ -256,6 +259,7 @@ class AndroidBluetoothController(private val context: Context) : BluetoothContro
     override fun closeConnection() {
         currentClientSocket?.close()
         currentClientSocket = null
+        Log.i("BluetoothController", "Connection closed")
     }
 
     override fun onDestroy() {

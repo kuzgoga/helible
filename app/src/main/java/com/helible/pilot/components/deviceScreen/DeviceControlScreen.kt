@@ -1,7 +1,10 @@
 package com.helible.pilot.components.deviceScreen
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
@@ -11,6 +14,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
@@ -33,7 +37,7 @@ fun DeviceControlScreen(
     scannerPageName: String = "scanner",
 ) {
     LaunchedEffect(Unit) {
-        val preferences: AppPreferences? = getPreferences()
+        val preferences = getPreferences()
         if (preferences == null) {
             navigateToPage(scannerPageName)
         } else {
@@ -85,19 +89,24 @@ fun DeviceControlScreen(
                 )
                 for (action in section.value) {
                     TextButton(
-                        onClick = { navigateToPage(action.first + '/' + action.second.second) }
+                        onClick = { navigateToPage(action.first + '/' + action.second.second) },
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        Icon(
-                            painter = painterResource(id = action.second.first.first),
-                            tint = action.second.first.second,
-                            contentDescription = null,
-                            modifier = Modifier.size(25.dp)
-                        )
-                        Text(
-                            text = action.second.second,
-                            color = MaterialTheme.colorScheme.inverseSurface,
-                            modifier = Modifier.padding(horizontal = 5.dp)
-                        )
+                        Row(modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(5.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                painter = painterResource(id = action.second.first.first),
+                                tint = action.second.first.second,
+                                contentDescription = null,
+                                modifier = Modifier.size(25.dp)
+                            )
+                            Text(
+                                text = action.second.second,
+                                color = MaterialTheme.colorScheme.inverseSurface
+                            )
+                        }
                     }
                 }
             }
