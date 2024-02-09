@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Digital Pilot</string>
+    <string name="calibration_description">Расположите устройство на ровной горизонтальной поверхности, чтобы сани вертолета полностью лежали на ней. Нажмите кнопку калибровки ниже и ждите её окончания, не создавая тряски.</string>
 </resources>

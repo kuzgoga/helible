@@ -17,6 +17,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.helible.pilot.components.CalibrationPage
 import com.helible.pilot.components.deviceScreen.DeviceControlScreen
 import com.helible.pilot.components.deviceScreen.defaultDeviceActionsList
 import com.helible.pilot.components.scannerScreen.ScannerScreen
@@ -33,11 +34,7 @@ import com.helible.pilot.viewmodels.SavedPreferencesImpl
 
 
 class MainActivity : ComponentActivity() {
-    // TODO: device screen logic
-    // TODO: constrain text size
-    // TODO: add Bluetooth telemetry...
     // TODO: move text strings to resources
-    // TODO: review permissions logic
 
     private val preferences by lazy {
         SavedPreferencesImpl(getSharedPreferences(packageName, MODE_PRIVATE))
@@ -46,6 +43,7 @@ class MainActivity : ComponentActivity() {
         PreferencesViewModel(preferences)
     }
 
+    @ExperimentalStdlibApi
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -66,14 +64,6 @@ class MainActivity : ComponentActivity() {
 
             LaunchedEffect(key1 = null) {
                 permissionLauncher.launch()
-            }
-
-
-            LaunchedEffect(key1 = bluetoothState) {
-                if (bluetoothState.isConnected) {
-                    Toast.makeText(applicationContext, "Подключение завершено", Toast.LENGTH_SHORT)
-                        .show()
-                }
             }
 
             val navController = rememberNavController()
@@ -168,7 +158,9 @@ class MainActivity : ComponentActivity() {
                         }
                         composable("imu_calibration/{title}")
                         { backStackEntry ->
-                            NotImplementedPage(
+                            CalibrationPage(
+                                deviceStatus = bluetoothState.deviceState?.status,
+                                startCalibration = { bluetoothViewModel.startImuCalibration() },
                                 title = backStackEntry.arguments?.getString("title") ?: "null",
                                 navigateBack = { navController.popBackStack() }
                             )

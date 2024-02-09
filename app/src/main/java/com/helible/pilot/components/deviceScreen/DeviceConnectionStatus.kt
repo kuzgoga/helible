@@ -51,6 +51,8 @@ fun DeviceConnectionStatus(bluetoothState: BluetoothUiState) {
                     .padding(2.dp)
             )
             Text("Подключение...")
+        } else {
+            Text("Попытка подключения не удалась.")
         }
     }
 }

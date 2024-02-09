@@ -19,6 +19,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -26,6 +27,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.helible.pilot.R
 import com.helible.pilot.dataclasses.BluetoothUiState
+import com.helible.pilot.dataclasses.DeviceStatus
 import com.helible.pilot.viewmodels.AppPreferences
 
 @Composable
@@ -65,7 +67,19 @@ fun DeviceBadge(
                     fontWeight = FontWeight.Bold
                 )
                 DeviceConnectionStatus(bluetoothUiState)
-                Text(text = "Заряд батареи: 79%")
+                if(bluetoothUiState.isConnected) {
+                    val deviceStatus = bluetoothUiState.deviceState?.status
+                    if (deviceStatus != null) {
+                        Text(text = "Заряд батареи: ${bluetoothUiState.deviceState.batteryCharge}%")
+                        if (deviceStatus == DeviceStatus.ChargeRequired) {
+                            Text(text = "Аккумулятор разряжен", color = Color.Red)
+                        } else {
+                            Text(text = deviceStatus.description())
+                        }
+                    } else {
+                        Text(text = "Ожиданием рукопожатия...")
+                    }
+                }
             }
             Box(
                 contentAlignment = Alignment.CenterEnd,

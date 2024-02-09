@@ -15,8 +15,8 @@ import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import com.helible.pilot.viewmodels.BluetoothDataTransferService
-import com.helible.pilot.KMessage
 import com.helible.pilot.dataclasses.BluetoothDeviceDomain
+import com.helible.pilot.dataclasses.DeviceState
 import com.helible.pilot.receivers.BluetoothAdapterStateReceiver
 import com.helible.pilot.receivers.BluetoothStateReceiver
 import kotlinx.coroutines.CoroutineScope
@@ -40,7 +40,7 @@ import java.util.UUID
 
 sealed interface ConnectionResult {
     object ConnectionEstablished : ConnectionResult
-    data class TransferSucceded(val message: String) : ConnectionResult
+    data class TransferSucceded(val message: DeviceState) : ConnectionResult
     data class Error(val message: String) : ConnectionResult
 }
 
@@ -61,6 +61,7 @@ interface BluetoothController {
     fun onDestroy()
 }
 
+@ExperimentalStdlibApi
 class AndroidBluetoothController(private val context: Context) : BluetoothController {
 
     private val bluetoothManager by lazy {
@@ -228,21 +229,26 @@ class AndroidBluetoothController(private val context: Context) : BluetoothContro
                 try {
                     socket.connect()
                     emit(ConnectionResult.ConnectionEstablished)
-                    BluetoothDataTransferService(socket).also { it ->
+                    BluetoothDataTransferService(socket).also {
                         dataTransferService = it
                         emitAll(
                             it.listenForIncomingMessages()
-                                .map { ConnectionResult.TransferSucceded(it) }
+                                .map { deviceState ->
+                                    ConnectionResult.TransferSucceded(deviceState)
+                                }
                         )
                     }
                 } catch (e: IOException) {
                     socket.close()
                     currentClientSocket = null
-                    Log.e("BluetoothController", e.toString())
+                    Log.e("BluetoothController", "I/O exception: e")
                     emit(ConnectionResult.Error("Connection was interrupted"))
                 }
             }
-        }.onCompletion { closeConnection() }.flowOn(Dispatchers.IO)
+        }.onCompletion {
+            Log.i("BluetoothController", "Connection closed on flow completion.")
+            closeConnection()
+        }.flowOn(Dispatchers.IO)
     }
 
     override suspend fun trySendMessage(message: ByteArray): Boolean {
