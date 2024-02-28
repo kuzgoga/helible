@@ -8,8 +8,14 @@ import com.helible.pilot.controllers.ConnectionResult
 import com.helible.pilot.dataclasses.BluetoothDevice
 import com.helible.pilot.dataclasses.BluetoothUiState
 import com.helible.pilot.dataclasses.ChangedDeviceStatus
+import com.helible.pilot.dataclasses.DeviceState
 import com.helible.pilot.dataclasses.DeviceStatus
 import com.helible.pilot.dataclasses.DeviceStatusJsonAdapter
+import com.helible.pilot.dataclasses.MessageType
+import com.helible.pilot.dataclasses.PidSettingRequiredMessage
+import com.helible.pilot.dataclasses.PidSettings
+import com.squareup.moshi.JsonDataException
+import com.squareup.moshi.JsonEncodingException
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import kotlinx.coroutines.Job
@@ -25,7 +31,6 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.time.LocalTime
 
 class BluetoothViewModel(
     private val bluetoothController: BluetoothController,
@@ -46,7 +51,10 @@ class BluetoothViewModel(
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), _state.value)
     private var deviceConnectionJob: Job? = null
     private val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).add(DeviceStatusJsonAdapter()).build()
-    private val newStatusMessageAdapter = moshi.adapter(ChangedDeviceStatus::class.java)
+    private val statusMessageAdapter = moshi.adapter(ChangedDeviceStatus::class.java)
+    private val deviceStateMessageAdapter = moshi.adapter(DeviceState::class.java)
+    private val pidSittingsMessageAdapter = moshi.adapter(PidSettings::class.java)
+    private val pidSittingsRequiredMessageAdapter = moshi.adapter(PidSettingRequiredMessage::class.java)
 
     init {
         bluetoothController.isConnected.onEach { isConnected ->
@@ -94,10 +102,35 @@ class BluetoothViewModel(
                 }
 
                 is ConnectionResult.TransferSucceded -> {
-                    _state.update {
-                    it.copy(
-                        deviceState = result.message
-                    )
+                    try {
+                        when (result.message.type) {
+                            MessageType.PidSettings -> {
+                                val newPidSettings =
+                                    pidSittingsMessageAdapter.fromJson(result.message.data)
+                                _state.update {
+                                    it.copy(
+                                        deviceState = it.deviceState?.copy(pidSettings = newPidSettings)
+                                    )
+                                }
+                            }
+
+                            MessageType.UpdateMessage -> {
+                                val newDeviceState =
+                                    deviceStateMessageAdapter.fromJson(result.message.data)
+                                if (newDeviceState != null) {
+                                    _state.update {
+                                        it.copy(
+                                            deviceState = newDeviceState.copy(pidSettings = it.deviceState?.pidSettings)
+                                        )
+                                    }
+                                }
+
+                            }
+                        }
+                    } catch (e: JsonDataException) {
+                        Log.e("BluetoothVM", "Failed to parse message: ${result.message.data}")
+                    } catch (e: JsonEncodingException) {
+                        Log.e("BluetoothVM", "Failed to decode message: ${result.message.data}")
                     }
                 }
 
@@ -113,13 +146,18 @@ class BluetoothViewModel(
             }
         }
             .catch { throwable ->
-                Log.e("BluetoothController", "Error occured while data transfer: ${throwable.message}")
+                Log.e(
+                    "BluetoothController",
+                    "Error occured while data transfer: ${throwable.message}"
+                )
                 bluetoothController.closeConnection()
-                _state.update { it.copy(
-                    isConnected = false,
-                    isConnecting = false,
-                    deviceState = null
-                ) }
+                _state.update {
+                    it.copy(
+                        isConnected = false,
+                        isConnecting = false,
+                        deviceState = null
+                    )
+                }
             }
             .launchIn(viewModelScope)
     }
@@ -176,15 +214,59 @@ class BluetoothViewModel(
 
     fun startImuCalibration() {
         viewModelScope.launch {
-            val message = newStatusMessageAdapter.toJson(
+            val message = statusMessageAdapter.toJson(
                 ChangedDeviceStatus(DeviceStatus.IsImuCalibration)
             ) + "\n\r"
-            val success = bluetoothController.trySendMessage(
+            val isSuccess = bluetoothController.trySendMessage(
                 message.toByteArray()
             )
-            if(!success) {
+            if(!isSuccess) {
                 Log.e("BluetoothVM", "Failed to start IMU calibration: $message")
+            } else {
+                _state.update {
+                    it.copy(
+                        deviceState = it.deviceState?.copy(status = DeviceStatus.IsImuCalibration)
+                    )
+                }
             }
         }
+    }
+
+    fun requestPidSettings() {
+        viewModelScope.launch {
+            val message = pidSittingsRequiredMessageAdapter.toJson(PidSettingRequiredMessage(true)) + "\n\r"
+            Log.i("BluetoothVM", "Requested PID settings: $message")
+            val isSuccess = bluetoothController.trySendMessage(
+                message.toByteArray()
+            )
+            if(!isSuccess) {
+                Log.e("BluetoothVM", "Failed to request PID settings: $message")
+            }
+        }
+    }
+
+    fun applyPidSettings(pidSettings: PidSettings) {
+        viewModelScope.launch {
+            val message = pidSittingsMessageAdapter.toJson(pidSettings) + "\n\r"
+            val isSuccess = bluetoothController.trySendMessage(message.toByteArray())
+            if(!isSuccess) {
+                Log.e("BluetoothVM", "Failed to request PID settings: $message")
+                _state.update {
+                    it.copy(errorMessage = "Не удалось обновить значения PID")
+                }
+            } else {
+                _state.update {
+                    it.copy(deviceState = it.deviceState?.copy(pidSettings = pidSettings))
+                }
+            }
+        }
+    }
+
+    fun clearPidSettings() {
+        Log.i("BluetoothVM", "PidSettings cleared")
+        _state.update {
+            it.copy(deviceState = it.deviceState?.copy(pidSettings = null))
+        }
+        Log.i("BluetoothVM", "PidSettings: ${_state.value.deviceState?.pidSettings}")
     }
 }

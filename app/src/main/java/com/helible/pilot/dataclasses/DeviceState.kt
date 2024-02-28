@@ -12,4 +12,5 @@ data class DeviceState(
     @Json(name = "p") val pitch: Float = 0f,
     @Json(name = "r") val roll: Float = 0f,
     @Json(name = "zIn") val zInertial: Float = 0f,
+    val pidSettings: PidSettings? = null
 )

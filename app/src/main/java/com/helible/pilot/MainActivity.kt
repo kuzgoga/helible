@@ -6,10 +6,8 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -18,8 +16,11 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.helible.pilot.components.CalibrationPage
+import com.helible.pilot.components.NotImplementedPage
+import com.helible.pilot.components.console.ConsolePage
 import com.helible.pilot.components.deviceScreen.DeviceControlScreen
 import com.helible.pilot.components.deviceScreen.defaultDeviceActionsList
+import com.helible.pilot.components.pidSettings.PidSettingsPage
 import com.helible.pilot.components.scannerScreen.ScannerScreen
 import com.helible.pilot.permissions.PermissionsLauncher
 import com.helible.pilot.permissions.PermissionsRequest
@@ -141,13 +142,10 @@ class MainActivity : ComponentActivity() {
                         }
                         composable("console/{title}")
                         { backStackEntry ->
-                            NotImplementedPage(
+                            ConsolePage(
                                 title = backStackEntry.arguments?.getString("title") ?: "null",
                                 navigateBack = { navController.popBackStack() }
                             )
-                            Button(onClick = { bluetoothViewModel.sendHelloWorld() }) {
-                                Text("Click me!")
-                            }
                         }
                         composable("codeblocks/{title}")
                         { backStackEntry ->
@@ -174,10 +172,20 @@ class MainActivity : ComponentActivity() {
                         }
                         composable("pid_settings/{title}")
                         { backStackEntry ->
-                            NotImplementedPage(
+                            PidSettingsPage(
                                 title = backStackEntry.arguments?.getString("title") ?: "null",
-                                navigateBack = { navController.popBackStack() }
+                                navigateBack = {
+                                    navController.popBackStack()
+                                    bluetoothViewModel.clearPidSettings()
+                                },
+                                requestPidSettings = { bluetoothViewModel.requestPidSettings() },
+                                setPidSettings = {settings -> bluetoothViewModel.applyPidSettings(settings)},
+                                deviceState = bluetoothState.deviceState
                             )
+                            BackHandler {
+                                navController.popBackStack()
+                                bluetoothViewModel.clearPidSettings()
+                            }
                         }
                         composable("reports/{title}")
                         { backStackEntry ->

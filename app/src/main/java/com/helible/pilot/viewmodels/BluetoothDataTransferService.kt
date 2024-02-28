@@ -4,6 +4,11 @@ import android.bluetooth.BluetoothSocket
 import android.util.Log
 import com.helible.pilot.dataclasses.DeviceState
 import com.helible.pilot.dataclasses.DeviceStatusJsonAdapter
+import com.helible.pilot.dataclasses.GeneralMessage
+import com.helible.pilot.dataclasses.MessageType
+import com.helible.pilot.dataclasses.PidSettings
+import com.helible.pilot.exceptions.TransferFailedException
+import com.squareup.moshi.JsonDataException
 import com.squareup.moshi.JsonEncodingException
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.adapter
@@ -16,19 +21,18 @@ import kotlinx.coroutines.withContext
 
 import java.io.IOException
 
-class TransferFailedException : IOException("Reading incoming data failed")
+const val maxPackageSize = 512; // bytes
 
 @ExperimentalStdlibApi
 class BluetoothDataTransferService(
     private val socket: BluetoothSocket,
 ) {
-    fun listenForIncomingMessages(): Flow<DeviceState> {
-        val moshi = Moshi.Builder().add(DeviceStatusJsonAdapter()).add(KotlinJsonAdapterFactory()).build()
-        val deviceStateMessageAdapter = moshi.adapter<DeviceState>()
+    fun listenForIncomingMessages(): Flow<GeneralMessage> {
         return flow {
             if (!socket.isConnected)
                 return@flow
-            val buffer = ByteArray(512)
+
+            val buffer = ByteArray(maxPackageSize)
             while (true) {
                 val byteCount: Int = try {
                     socket.inputStream.read(buffer)
@@ -36,23 +40,17 @@ class BluetoothDataTransferService(
                     Log.e("BluetoothController", "Failed to receive incoming data")
                     throw TransferFailedException()
                 }
+                var messageData: String = buffer.decodeToString(endIndex = byteCount)
+                val messageType: MessageType? = MessageType.values()
+                    .elementAtOrNull(messageData.split(";")[0].toInt())
 
-                val messageData: String = buffer.decodeToString(endIndex = byteCount)
-                if (!messageData.endsWith("\n\r")) {
+                if (messageData.endsWith("\n\r") && messageType != null) {
+                    messageData = messageData.dropLast(2).split(";")[1]
+                    emit(GeneralMessage(messageType, messageData))
+                    Log.d("BluetoothController", "Received: $messageData")
+                } else {
                     Log.i("BluetoothController", "Package end isn't valid.")
                     Log.i("BluetoothController", messageData)
-
-                } else {
-                    val messageJson = messageData.dropLast(2)
-                    try {
-                        val deviceState = deviceStateMessageAdapter.fromJson(messageJson)!!
-                        emit(deviceState)
-                        Log.i("BluetoothController", "Received: $deviceState")
-                    } catch (e: NullPointerException) {
-                        Log.e("BluetoothController", "Nullable message received: $messageJson")
-                    } catch (e: JsonEncodingException) {
-                        Log.e("BluetoothController", "Invalid message received: $messageJson")
-                    }
                 }
             }
         }.flowOn(Dispatchers.IO)

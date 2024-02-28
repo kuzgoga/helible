@@ -16,7 +16,7 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import com.helible.pilot.viewmodels.BluetoothDataTransferService
 import com.helible.pilot.dataclasses.BluetoothDeviceDomain
-import com.helible.pilot.dataclasses.DeviceState
+import com.helible.pilot.dataclasses.GeneralMessage
 import com.helible.pilot.receivers.BluetoothAdapterStateReceiver
 import com.helible.pilot.receivers.BluetoothStateReceiver
 import kotlinx.coroutines.CoroutineScope
@@ -40,7 +40,7 @@ import java.util.UUID
 
 sealed interface ConnectionResult {
     object ConnectionEstablished : ConnectionResult
-    data class TransferSucceded(val message: DeviceState) : ConnectionResult
+    data class TransferSucceded(val message: GeneralMessage) : ConnectionResult
     data class Error(val message: String) : ConnectionResult
 }
 
@@ -241,7 +241,7 @@ class AndroidBluetoothController(private val context: Context) : BluetoothContro
                 } catch (e: IOException) {
                     socket.close()
                     currentClientSocket = null
-                    Log.e("BluetoothController", "I/O exception: e")
+                    Log.e("BluetoothController", "I/O exception: ${e.message}")
                     emit(ConnectionResult.Error("Connection was interrupted"))
                 }
             }

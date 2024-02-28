@@ -1,4 +1,4 @@
-package com.helible.pilot
+package com.helible.pilot.components
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
