@@ -55,6 +55,9 @@ class BluetoothViewModel(
     private val deviceStateMessageAdapter = moshi.adapter(DeviceState::class.java)
     private val pidSittingsMessageAdapter = moshi.adapter(PidSettings::class.java)
     private val pidSittingsRequiredMessageAdapter = moshi.adapter(PidSettingRequiredMessage::class.java)
+    companion object {
+        const val messageDelimeter = "\n"
+    }
 
     init {
         bluetoothController.isConnected.onEach { isConnected ->
@@ -203,20 +206,11 @@ class BluetoothViewModel(
         super.onCleared()
     }
 
-    fun sendHelloWorld() {
-        viewModelScope.launch {
-            bluetoothController.trySendMessage(
-                "{\"p1\": {\"p\": 1.5, \"i\": 1.5, \"d\": 1.5}}\n\r".toByteArray()
-                //"{\"p1\": [1.5, 1.5, 1.5]}\n\r".toByteArray()
-            )
-        }
-    }
-
     fun startImuCalibration() {
         viewModelScope.launch {
             val message = statusMessageAdapter.toJson(
                 ChangedDeviceStatus(DeviceStatus.IsImuCalibration)
-            ) + "\n\r"
+            ) + messageDelimeter
             val isSuccess = bluetoothController.trySendMessage(
                 message.toByteArray()
             )
@@ -234,7 +228,7 @@ class BluetoothViewModel(
 
     fun requestPidSettings() {
         viewModelScope.launch {
-            val message = pidSittingsRequiredMessageAdapter.toJson(PidSettingRequiredMessage(true)) + "\n\r"
+            val message = pidSittingsRequiredMessageAdapter.toJson(PidSettingRequiredMessage(true)) + messageDelimeter
             Log.i("BluetoothVM", "Requested PID settings: $message")
             val isSuccess = bluetoothController.trySendMessage(
                 message.toByteArray()
@@ -247,7 +241,7 @@ class BluetoothViewModel(
 
     fun applyPidSettings(pidSettings: PidSettings) {
         viewModelScope.launch {
-            val message = pidSittingsMessageAdapter.toJson(pidSettings) + "\n\r"
+            val message = pidSittingsMessageAdapter.toJson(pidSettings) + messageDelimeter
             val isSuccess = bluetoothController.trySendMessage(message.toByteArray())
             if(!isSuccess) {
                 Log.e("BluetoothVM", "Failed to request PID settings: $message")
