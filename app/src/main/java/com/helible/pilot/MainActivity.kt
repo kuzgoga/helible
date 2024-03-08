@@ -17,6 +17,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.helible.pilot.components.CalibrationPage
 import com.helible.pilot.components.NotImplementedPage
+import com.helible.pilot.components.RotorsTestPage
 import com.helible.pilot.components.console.ConsolePage
 import com.helible.pilot.components.deviceScreen.DeviceControlScreen
 import com.helible.pilot.components.deviceScreen.defaultDeviceActionsList
@@ -62,6 +63,7 @@ class MainActivity : ComponentActivity() {
 
             val bluetoothState by bluetoothViewModel.state.collectAsState()
             val selectedDevice by bluetoothViewModel.selectedDevice.collectAsState()
+            val rotorsDuty by bluetoothViewModel.rotorsDuty.collectAsState()
 
             LaunchedEffect(key1 = null) {
                 permissionLauncher.launch()
@@ -165,10 +167,23 @@ class MainActivity : ComponentActivity() {
                         }
                         composable("motor_test/{title}")
                         { backStackEntry ->
-                            NotImplementedPage(
+                            RotorsTestPage(
                                 title = backStackEntry.arguments?.getString("title") ?: "null",
-                                navigateBack = { navController.popBackStack() }
+                                rotorsDuty = rotorsDuty,
+                                setRotorsDuty = { bluetoothViewModel.setRotorsDuty(it) },
+                                startTelemetrySending = { bluetoothViewModel.startRotorsConfigurationTelemetry() },
+                                stopRotors = { bluetoothViewModel.stopRotors() },
+                                navigateBack = {
+                                    navController.popBackStack()
+                                    bluetoothViewModel.stopRotorsConfigurationTelemetry()
+                                    bluetoothViewModel.stopRotors()
+                                }
                             )
+                            BackHandler {
+                                navController.popBackStack()
+                                bluetoothViewModel.stopRotorsConfigurationTelemetry()
+                                bluetoothViewModel.stopRotors()
+                            }
                         }
                         composable("pid_settings/{title}")
                         { backStackEntry ->

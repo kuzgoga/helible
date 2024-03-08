@@ -14,11 +14,14 @@ import com.helible.pilot.dataclasses.DeviceStatusJsonAdapter
 import com.helible.pilot.dataclasses.MessageType
 import com.helible.pilot.dataclasses.PidSettingRequiredMessage
 import com.helible.pilot.dataclasses.PidSettings
+import com.helible.pilot.dataclasses.RotorsDuty
+import com.helible.pilot.dataclasses.StopMessage
 import com.squareup.moshi.JsonDataException
 import com.squareup.moshi.JsonEncodingException
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -26,6 +29,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
@@ -49,14 +53,28 @@ class BluetoothViewModel(
                 pairedBluetoothDevices = pairedDevices
             )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), _state.value)
+    private val _rotorsDuty: MutableStateFlow<RotorsDuty> = MutableStateFlow(RotorsDuty(0, 0, 0))
+    private val _isRotorsTelemetryEnabled: MutableStateFlow<Boolean> = MutableStateFlow(false)
+
+    val rotorsDuty: StateFlow<RotorsDuty>
+        get() = _rotorsDuty.asStateFlow()
+
+    private var rotorsTelemetryJob: Job? = null
     private var deviceConnectionJob: Job? = null
-    private val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).add(DeviceStatusJsonAdapter()).build()
+
+    private val moshi =
+        Moshi.Builder().add(KotlinJsonAdapterFactory()).add(DeviceStatusJsonAdapter()).build()
     private val statusMessageAdapter = moshi.adapter(ChangedDeviceStatus::class.java)
     private val deviceStateMessageAdapter = moshi.adapter(DeviceState::class.java)
     private val pidSittingsMessageAdapter = moshi.adapter(PidSettings::class.java)
-    private val pidSittingsRequiredMessageAdapter = moshi.adapter(PidSettingRequiredMessage::class.java)
+    private val pidSittingsRequiredMessageAdapter =
+        moshi.adapter(PidSettingRequiredMessage::class.java)
+    private val rotorDutyMessageAdapter = moshi.adapter(RotorsDuty::class.java)
+    private val stopAllRotorsMessageAdapter = moshi.adapter(StopMessage::class.java)
+
     companion object {
-        const val messageDelimeter = "\n"
+        const val messageDelimiter = "\n"
+        const val telemetryPauseDuractionMs: Long = 100
     }
 
     init {
@@ -210,11 +228,11 @@ class BluetoothViewModel(
         viewModelScope.launch {
             val message = statusMessageAdapter.toJson(
                 ChangedDeviceStatus(DeviceStatus.IsImuCalibration)
-            ) + messageDelimeter
+            ) + messageDelimiter
             val isSuccess = bluetoothController.trySendMessage(
                 message.toByteArray()
             )
-            if(!isSuccess) {
+            if (!isSuccess) {
                 Log.e("BluetoothVM", "Failed to start IMU calibration: $message")
             } else {
                 _state.update {
@@ -228,12 +246,13 @@ class BluetoothViewModel(
 
     fun requestPidSettings() {
         viewModelScope.launch {
-            val message = pidSittingsRequiredMessageAdapter.toJson(PidSettingRequiredMessage(true)) + messageDelimeter
+            val message =
+                pidSittingsRequiredMessageAdapter.toJson(PidSettingRequiredMessage(true)) + messageDelimiter
             Log.i("BluetoothVM", "Requested PID settings: $message")
             val isSuccess = bluetoothController.trySendMessage(
                 message.toByteArray()
             )
-            if(!isSuccess) {
+            if (!isSuccess) {
                 Log.e("BluetoothVM", "Failed to request PID settings: $message")
             }
         }
@@ -241,9 +260,9 @@ class BluetoothViewModel(
 
     fun applyPidSettings(pidSettings: PidSettings) {
         viewModelScope.launch {
-            val message = pidSittingsMessageAdapter.toJson(pidSettings) + messageDelimeter
+            val message = pidSittingsMessageAdapter.toJson(pidSettings) + messageDelimiter
             val isSuccess = bluetoothController.trySendMessage(message.toByteArray())
-            if(!isSuccess) {
+            if (!isSuccess) {
                 Log.e("BluetoothVM", "Failed to request PID settings: $message")
                 _state.update {
                     it.copy(errorMessage = "Не удалось обновить значения PID")
@@ -262,5 +281,59 @@ class BluetoothViewModel(
             it.copy(deviceState = it.deviceState?.copy(pidSettings = null))
         }
         Log.i("BluetoothVM", "PidSettings: ${_state.value.deviceState?.pidSettings}")
+    }
+
+    private fun sendRotorsDuty() {
+        viewModelScope.launch {
+            val message = rotorDutyMessageAdapter.toJson(
+                _rotorsDuty.value
+            ) + messageDelimiter
+            val isSuccess = bluetoothController.trySendMessage(
+                message.toByteArray()
+            )
+            if (!isSuccess) {
+                Log.e("BluetoothVM", "Failed to send rotors telemetry: $message")
+            }
+        }
+    }
+
+    fun startRotorsConfigurationTelemetry() {
+        Log.i("BluetoothVM", "Start send rotors configuration telemetry...")
+        if(_isRotorsTelemetryEnabled.value) return
+        _isRotorsTelemetryEnabled.update { true }
+        flow {
+            while(_isRotorsTelemetryEnabled.value) {
+                emit(Unit)
+                delay(telemetryPauseDuractionMs)
+            }
+        }.onEach{
+            sendRotorsDuty()
+            Log.d("BluetoothVM", "Sended rotors telemetry")
+        }.launchIn(viewModelScope)
+    }
+
+    fun stopRotorsConfigurationTelemetry() {
+        Log.i("BluetoothVM", "Stop send rotors configuration periodically...")
+        rotorsTelemetryJob = null
+        _isRotorsTelemetryEnabled.update { false }
+    }
+
+    fun setRotorsDuty(newRotorsDuty: RotorsDuty) {
+        _rotorsDuty.update { newRotorsDuty }
+    }
+
+    fun stopRotors() {
+        viewModelScope.launch {
+            val message = stopAllRotorsMessageAdapter.toJson(StopMessage()) + messageDelimiter
+            val isSuccess = bluetoothController.trySendMessage(message.toByteArray())
+            if (!isSuccess) {
+                Log.e("BluetoothVM", "Failed to stop all rotors: $message")
+                _state.update {
+                    it.copy(errorMessage = "Не удалось остановить моторы!")
+                }
+            } else {
+                _rotorsDuty.update { RotorsDuty(0, 0, 0) }
+            }
+        }
     }
 }
