@@ -18,6 +18,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -30,12 +31,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
+import com.helible.pilot.R
 import com.helible.pilot.components.BlankPage
 import com.helible.pilot.dataclasses.DeviceState
 import com.helible.pilot.dataclasses.DeviceStatus
@@ -55,8 +58,9 @@ fun PidSettingsPage(
         var pValue by remember { mutableStateOf("") }
         var iValue by remember { mutableStateOf("") }
         var dValue by remember { mutableStateOf("") }
-        var selectedRegulator by remember { mutableStateOf(1) }
-        val dropdownMenuItems = listOf("PID 1", "PID 2", "PID 3")
+        var selectedRegulator by remember { mutableStateOf("") }
+        val dropdownMenuItems =
+            listOf("Контроллер высоты", "Контроллер крена", "Контроллер рысканья")
 
         LaunchedEffect(null) {
             requestPidSettings()
@@ -64,21 +68,23 @@ fun PidSettingsPage(
         LaunchedEffect(deviceState?.pidSettings) {
             if (deviceState?.pidSettings != null) {
                 val pidSettings = deviceState.pidSettings
-                when(selectedRegulator){
-                    1 -> {
-                        pidSettings.p1.p.toString().also { pValue = it }
-                        pidSettings.p1.i.toString().also { iValue = it }
-                        pidSettings.p1.d.toString().also { dValue = it }
+                when (selectedRegulator) {
+                    dropdownMenuItems[0] -> {
+                        pidSettings.heightControllerParams.p.toString().also { pValue = it }
+                        pidSettings.heightControllerParams.i.toString().also { iValue = it }
+                        pidSettings.heightControllerParams.d.toString().also { dValue = it }
                     }
-                    2 -> {
-                        pidSettings.p2.p.toString().also { pValue = it }
-                        pidSettings.p2.i.toString().also { iValue = it }
-                        pidSettings.p2.d.toString().also { dValue = it }
+
+                    dropdownMenuItems[1] -> {
+                        pidSettings.yawControllerParams.p.toString().also { pValue = it }
+                        pidSettings.yawControllerParams.i.toString().also { iValue = it }
+                        pidSettings.yawControllerParams.d.toString().also { dValue = it }
                     }
-                    3 -> {
-                        pidSettings.p3.p.toString().also { pValue = it }
-                        pidSettings.p3.i.toString().also { iValue = it }
-                        pidSettings.p3.d.toString().also { dValue = it }
+
+                    dropdownMenuItems[2] -> {
+                        pidSettings.pitchControllerParams.p.toString().also { pValue = it }
+                        pidSettings.pitchControllerParams.i.toString().also { iValue = it }
+                        pidSettings.pitchControllerParams.d.toString().also { dValue = it }
                     }
                 }
             }
@@ -87,7 +93,6 @@ fun PidSettingsPage(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(10.dp)
         )
         {
             if (deviceState?.status != DeviceStatus.Idle) {
@@ -96,12 +101,31 @@ fun PidSettingsPage(
                     textAlign = TextAlign.Center
                 )
             } else if (deviceState.pidSettings == null) {
-                Column {
-                    CircularProgressIndicator(modifier = Modifier.padding(10.dp))
-                    Text(text = "Синхронизация...")
-                }
+                CircularProgressIndicator(modifier = Modifier.padding(10.dp))
+                Text(text = "Синхронизация...")
             } else {
                 val pidSettings = deviceState.pidSettings
+
+                Column(modifier = Modifier.padding(horizontal = 10.dp).padding(bottom = 10.dp)) {
+                    Text(
+                        "Рекомендации по настройке ПИД регуляторов",
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier
+                            .padding(vertical = 10.dp)
+                    )
+                    Text(
+                        text = LocalContext.current.getString(R.string.p_pid_value_description),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Text(
+                        text = LocalContext.current.getString(R.string.i_pid_value_description),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Text(
+                        text = LocalContext.current.getString(R.string.d_pid_value_description),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
 
                 OutlinedDropdownMenu(
                     label = "ПИД регулятор",
@@ -110,22 +134,24 @@ fun PidSettingsPage(
                         Log.i("BluetoothVM", selected)
                         when (dropdownMenuItems.indexOf(selected)) {
                             0 -> {
-                                selectedRegulator = 1
-                                pidSettings.p1.p.toString().also { pValue = it }
-                                pidSettings.p1.i.toString().also { iValue = it }
-                                pidSettings.p1.d.toString().also { dValue = it }
+                                selectedRegulator = dropdownMenuItems[0]
+                                pidSettings.heightControllerParams.p.toString().also { pValue = it }
+                                pidSettings.heightControllerParams.i.toString().also { iValue = it }
+                                pidSettings.heightControllerParams.d.toString().also { dValue = it }
                             }
+
                             1 -> {
-                                selectedRegulator = 2
-                                pidSettings.p2.p.toString().also { pValue = it }
-                                pidSettings.p2.i.toString().also { iValue = it }
-                                pidSettings.p2.d.toString().also { dValue = it }
+                                selectedRegulator = dropdownMenuItems[1]
+                                pidSettings.yawControllerParams.p.toString().also { pValue = it }
+                                pidSettings.yawControllerParams.i.toString().also { iValue = it }
+                                pidSettings.yawControllerParams.d.toString().also { dValue = it }
                             }
+
                             2 -> {
-                                selectedRegulator = 3
-                                pidSettings.p3.p.toString().also { pValue = it }
-                                pidSettings.p3.i.toString().also { iValue = it }
-                                pidSettings.p3.d.toString().also { dValue = it }
+                                selectedRegulator = dropdownMenuItems[2]
+                                pidSettings.pitchControllerParams.p.toString().also { pValue = it }
+                                pidSettings.pitchControllerParams.i.toString().also { iValue = it }
+                                pidSettings.pitchControllerParams.d.toString().also { dValue = it }
                             }
                         }
                     },
@@ -167,23 +193,35 @@ fun PidSettingsPage(
                 Button(
                     onClick = {
                         when (selectedRegulator) {
-                            1 -> {
+                            dropdownMenuItems[0] -> {
                                 val newPidSettings = pidSettings.copy(
-                                    p1 = PidParams(p.toFloat(), i.toFloat(), d.toFloat())
+                                    heightControllerParams = PidParams(
+                                        p.toFloat(),
+                                        i.toFloat(),
+                                        d.toFloat()
+                                    )
                                 )
                                 setPidSettings(newPidSettings)
                             }
 
-                            2 -> {
+                            dropdownMenuItems[1] -> {
                                 val newPidSettings = pidSettings.copy(
-                                    p2 = PidParams(p.toFloat(), i.toFloat(), d.toFloat())
+                                    yawControllerParams = PidParams(
+                                        p.toFloat(),
+                                        i.toFloat(),
+                                        d.toFloat()
+                                    )
                                 )
                                 setPidSettings(newPidSettings)
                             }
 
-                            3 -> {
+                            dropdownMenuItems[2] -> {
                                 val newPidSettings = pidSettings.copy(
-                                    p3 = PidParams(p.toFloat(), i.toFloat(), d.toFloat())
+                                    pitchControllerParams = PidParams(
+                                        p.toFloat(),
+                                        i.toFloat(),
+                                        d.toFloat()
+                                    )
                                 )
                                 setPidSettings(newPidSettings)
                             }
@@ -199,7 +237,7 @@ fun PidSettingsPage(
 }
 
 private fun isValidValue(k: String): Boolean {
-    return k.toFloatOrNull() != null && k.toFloat() >= 0f && k.toFloat() <= 2f
+    return k.toFloatOrNull() != null && k.toFloat() >= 0f && k.toFloat() <= 15f
 }
 
 @Preview(showBackground = true)
