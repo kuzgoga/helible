@@ -58,9 +58,9 @@ fun PidSettingsPage(
         var pValue by remember { mutableStateOf("") }
         var iValue by remember { mutableStateOf("") }
         var dValue by remember { mutableStateOf("") }
-        var selectedRegulator by remember { mutableStateOf("") }
         val dropdownMenuItems =
             listOf("Контроллер высоты", "Контроллер крена", "Контроллер рысканья")
+        var selectedRegulator by remember { mutableStateOf(dropdownMenuItems[0]) }
 
         LaunchedEffect(null) {
             requestPidSettings()
@@ -192,8 +192,8 @@ fun PidSettingsPage(
                 val d = dValue
                 Button(
                     onClick = {
-                        when (selectedRegulator) {
-                            dropdownMenuItems[0] -> {
+                        when (dropdownMenuItems.indexOf(selectedRegulator)) {
+                            0 -> {
                                 val newPidSettings = pidSettings.copy(
                                     heightControllerParams = PidParams(
                                         p.toFloat(),
@@ -204,7 +204,7 @@ fun PidSettingsPage(
                                 setPidSettings(newPidSettings)
                             }
 
-                            dropdownMenuItems[1] -> {
+                            1 -> {
                                 val newPidSettings = pidSettings.copy(
                                     yawControllerParams = PidParams(
                                         p.toFloat(),
@@ -215,7 +215,7 @@ fun PidSettingsPage(
                                 setPidSettings(newPidSettings)
                             }
 
-                            dropdownMenuItems[2] -> {
+                            2 -> {
                                 val newPidSettings = pidSettings.copy(
                                     pitchControllerParams = PidParams(
                                         p.toFloat(),
