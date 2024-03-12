@@ -22,7 +22,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
-import com.helible.pilot.components.Title
 import com.helible.pilot.dataclasses.BluetoothDevice
 import com.helible.pilot.dataclasses.BluetoothUiState
 

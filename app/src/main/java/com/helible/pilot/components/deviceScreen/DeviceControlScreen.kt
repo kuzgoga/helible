@@ -22,7 +22,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.helible.pilot.R
-import com.helible.pilot.components.Title
+import com.helible.pilot.components.scannerScreen.Title
 import com.helible.pilot.dataclasses.BluetoothUiState
 import com.helible.pilot.viewmodels.AppPreferences
 

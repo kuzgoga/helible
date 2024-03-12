@@ -15,6 +15,7 @@ import com.helible.pilot.dataclasses.MessageType
 import com.helible.pilot.dataclasses.PidSettingRequiredMessage
 import com.helible.pilot.dataclasses.PidSettings
 import com.helible.pilot.dataclasses.RotorsDuty
+import com.helible.pilot.dataclasses.SticksPosition
 import com.helible.pilot.dataclasses.StopMessage
 import com.squareup.moshi.JsonDataException
 import com.squareup.moshi.JsonEncodingException
@@ -55,11 +56,12 @@ class BluetoothViewModel(
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), _state.value)
     private val _rotorsDuty: MutableStateFlow<RotorsDuty> = MutableStateFlow(RotorsDuty(0, 0, 0))
     private val _isRotorsTelemetryEnabled: MutableStateFlow<Boolean> = MutableStateFlow(false)
+    private val _isConsoleTelemetryEnabled: MutableStateFlow<Boolean> = MutableStateFlow(false)
+    private val _sticksPosition: MutableStateFlow<SticksPosition> = MutableStateFlow(SticksPosition(0, 0, 0))
 
     val rotorsDuty: StateFlow<RotorsDuty>
         get() = _rotorsDuty.asStateFlow()
 
-    private var rotorsTelemetryJob: Job? = null
     private var deviceConnectionJob: Job? = null
 
     private val moshi =
@@ -71,6 +73,7 @@ class BluetoothViewModel(
         moshi.adapter(PidSettingRequiredMessage::class.java)
     private val rotorDutyMessageAdapter = moshi.adapter(RotorsDuty::class.java)
     private val stopAllRotorsMessageAdapter = moshi.adapter(StopMessage::class.java)
+    private val consoleStateMessageAdapter = moshi.adapter(SticksPosition::class.java)
 
     companion object {
         const val messageDelimiter = "\n"
@@ -145,13 +148,14 @@ class BluetoothViewModel(
                                         )
                                     }
                                 }
-
                             }
                         }
                     } catch (e: JsonDataException) {
                         Log.e("BluetoothVM", "Failed to parse message: ${result.message.data}")
                     } catch (e: JsonEncodingException) {
                         Log.e("BluetoothVM", "Failed to decode message: ${result.message.data}")
+                    } catch (e: Exception) {
+                        Log.e("BluetoothVM", "Unknown error on message: ${result.message.data}")
                     }
                 }
 
@@ -168,8 +172,8 @@ class BluetoothViewModel(
         }
             .catch { throwable ->
                 Log.e(
-                    "BluetoothController",
-                    "Error occured while data transfer: ${throwable.message}"
+                    "BluetoothVM",
+                    "Error occured while data transfer: ${throwable.localizedMessage}"
                 )
                 bluetoothController.closeConnection()
                 _state.update {
@@ -196,6 +200,8 @@ class BluetoothViewModel(
     fun disconnectFromDevice() {
         deviceConnectionJob?.cancel()
         bluetoothController.closeConnection()
+        _isConsoleTelemetryEnabled.update { false }
+        _isRotorsTelemetryEnabled.update { false }
         _state.update {
             it.copy(
                 isConnecting = false,
@@ -314,7 +320,6 @@ class BluetoothViewModel(
 
     fun stopRotorsConfigurationTelemetry() {
         Log.i("BluetoothVM", "Stop send rotors configuration periodically...")
-        rotorsTelemetryJob = null
         _isRotorsTelemetryEnabled.update { false }
     }
 
@@ -333,7 +338,88 @@ class BluetoothViewModel(
                 }
             } else {
                 _rotorsDuty.update { RotorsDuty(0, 0, 0) }
+                _isConsoleTelemetryEnabled.update { false }
             }
         }
+    }
+    fun startTakeoff() {
+        viewModelScope.launch {
+            val message = statusMessageAdapter.toJson(ChangedDeviceStatus(DeviceStatus.IsFlying)) + messageDelimiter
+            val isSuccess = bluetoothController.trySendMessage(message.toByteArray())
+            if(!isSuccess) {
+                Log.e("BluetoothVM", "Failed to start takeoff: $message")
+                _state.update {
+                    it.copy(errorMessage = "Не удалось начать полёт!")
+                }
+            } else {
+                _state.update { it.copy(deviceState = it.deviceState?.copy(status = DeviceStatus.IsFlying)) }
+                startConsoleTelemetrySending()
+            }
+        }
+    }
+
+    fun startOnboarding() {
+        viewModelScope.launch {
+            val message = statusMessageAdapter.toJson(ChangedDeviceStatus(DeviceStatus.IsBoarding)) + messageDelimiter
+            val isSuccess = bluetoothController.trySendMessage(message.toByteArray())
+            if(!isSuccess) {
+                Log.e("BluetoothVM", "Failed to start onboarding: $message")
+            } else {
+                _state.update { it.copy(deviceState = it.deviceState?.copy(status = DeviceStatus.IsBoarding)) }
+                stopConsoleTelemetry()
+            }
+        }
+    }
+
+    fun changeHeightStickPosition(newHeightStickPosition: Int) {
+        _sticksPosition.update {
+            it.copy(heightStick = newHeightStickPosition)
+        }
+    }
+
+    fun changeYawStickPosition(newYawStickPosition: Int) {
+        _sticksPosition.update {
+            it.copy(yawStick = newYawStickPosition)
+        }
+    }
+
+    fun changePitchStickPosition(newPitchStickPosition: Int) {
+        _sticksPosition.update {
+            it.copy(pitchStick = newPitchStickPosition)
+        }
+    }
+
+    private fun sendConsoleState() {
+        viewModelScope.launch {
+            val message = consoleStateMessageAdapter.toJson(
+                _sticksPosition.value
+            ) + messageDelimiter
+            val isSuccess = bluetoothController.trySendMessage(
+                message.toByteArray()
+            )
+            Log.i("BluetoothVM", "Sended telemetry message: $message")
+            if (!isSuccess) {
+                Log.e("BluetoothVM", "Failed to send console telemetry: $message")
+            }
+        }
+    }
+
+    private fun startConsoleTelemetrySending() {
+        if(_isConsoleTelemetryEnabled.value) {
+            return
+        }
+        _isConsoleTelemetryEnabled.update { true }
+        flow {
+            while (_isConsoleTelemetryEnabled.value) {
+                emit(Unit)
+                delay(telemetryPauseDuractionMs)
+            }
+        }.onEach {
+            sendConsoleState()
+        }.launchIn(viewModelScope)
+    }
+
+    private fun stopConsoleTelemetry() {
+        _isConsoleTelemetryEnabled.update { false }
     }
 }

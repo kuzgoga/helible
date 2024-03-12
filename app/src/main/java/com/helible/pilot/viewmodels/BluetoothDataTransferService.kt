@@ -40,6 +40,8 @@ class BluetoothDataTransferService(
                     }
                 } catch (e: NoSuchElementException) {
                     Log.e("BluetoothController", "Message type is invalid: $message")
+                } catch (e: NumberFormatException) {
+                    Log.e("BluetoothController", "Message invalid, may be device buffer congested: $message")
                 }
             }
         }.flowOn(Dispatchers.IO)

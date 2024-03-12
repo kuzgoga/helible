@@ -21,7 +21,7 @@ import com.helible.pilot.components.RotorsTestPage
 import com.helible.pilot.components.console.ConsolePage
 import com.helible.pilot.components.deviceScreen.DeviceControlScreen
 import com.helible.pilot.components.deviceScreen.defaultDeviceActionsList
-import com.helible.pilot.components.pidSettings.PidSettingsPage
+import com.helible.pilot.components.PidSettingsPage
 import com.helible.pilot.components.scannerScreen.ScannerScreen
 import com.helible.pilot.permissions.PermissionsLauncher
 import com.helible.pilot.permissions.PermissionsRequest
@@ -143,11 +143,38 @@ class MainActivity : ComponentActivity() {
                             if (preferencesViewModel.preferences != null) BackHandler {}
                         }
                         composable("console/{title}")
-                        { backStackEntry ->
+                        { _ ->
                             ConsolePage(
-                                title = backStackEntry.arguments?.getString("title") ?: "null",
-                                navigateBack = { navController.popBackStack() }
+                                startTakeoff = { bluetoothViewModel.startTakeoff() },
+                                startOnboarding = { bluetoothViewModel.startOnboarding() },
+                                stop = { bluetoothViewModel.stopRotors() },
+                                changeStick1Position = {
+                                    _: Int, heightVelocity: Int ->
+                                    bluetoothViewModel.changeHeightStickPosition(heightVelocity)
+                                },
+                                changeStick2Position = {
+                                    x: Int, y: Int ->
+                                    bluetoothViewModel.changePitchStickPosition(y)
+                                    bluetoothViewModel.changeYawStickPosition(x)
+                                },
+                                bluetoothUiState = bluetoothState,
+                                reconnect = {
+                                    val preferences = preferences.getPreferences()
+                                    if(preferences != null) {
+                                        bluetoothViewModel.connectToDevice(
+                                            preferences.deviceAddress
+                                        )
+                                    } else {
+                                        navController.navigate("scanner")
+                                    }
+                                },
+                                navigateBack = {
+                                    navController.popBackStack()
+                                }
                             )
+                            BackHandler {
+                                navController.popBackStack()
+                            }
                         }
                         composable("codeblocks/{title}")
                         { backStackEntry ->
