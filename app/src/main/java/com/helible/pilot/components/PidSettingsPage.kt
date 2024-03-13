@@ -58,7 +58,7 @@ fun PidSettingsPage(
         var iValue by remember { mutableStateOf("") }
         var dValue by remember { mutableStateOf("") }
         val dropdownMenuItems =
-            listOf("Контроллер высоты", "Контроллер крена", "Контроллер рысканья")
+            listOf("Контроллер высоты", "Контроллер тангажа", "Контроллер рысканья")
         var selectedRegulator by remember { mutableStateOf(dropdownMenuItems[0]) }
 
         LaunchedEffect(null) {
