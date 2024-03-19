@@ -1,5 +1,6 @@
 package com.helible.pilot.components
 
+import android.content.res.Configuration
 import android.widget.Spinner
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -70,7 +71,7 @@ fun CalibrationPage(
     }
 }
 
-@Preview
+@Preview(showSystemUi = true)
 @Composable
 fun CalibrationPagePreview() {
     Surface {

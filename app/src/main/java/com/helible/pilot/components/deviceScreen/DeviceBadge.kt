@@ -27,6 +27,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.helible.pilot.R
 import com.helible.pilot.dataclasses.BluetoothUiState
+import com.helible.pilot.dataclasses.DeviceState
 import com.helible.pilot.dataclasses.DeviceStatus
 import com.helible.pilot.viewmodels.AppPreferences
 
@@ -103,7 +104,14 @@ fun DeviceBadge(
 @Composable
 fun DeviceBadgePreview() {
     DeviceBadge(
-        bluetoothUiState = BluetoothUiState(isConnected = true),
+        bluetoothUiState = BluetoothUiState(
+            isConnected = false,
+            isConnecting = true,
+            deviceState = DeviceState(
+                status = DeviceStatus.Idle,
+                batteryCharge = 50,
+            )
+        ),
         tryToReconnect = {},
         getPreferences = { AppPreferences("Helicopter", "AA:BB:CC:FF:DD") }
     )

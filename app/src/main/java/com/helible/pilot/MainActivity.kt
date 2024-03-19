@@ -23,6 +23,7 @@ import com.helible.pilot.components.deviceScreen.DeviceControlScreen
 import com.helible.pilot.components.deviceScreen.defaultDeviceActionsList
 import com.helible.pilot.components.PidSettingsPage
 import com.helible.pilot.components.scannerScreen.ScannerScreen
+import com.helible.pilot.dataclasses.DeviceStatus
 import com.helible.pilot.permissions.PermissionsLauncher
 import com.helible.pilot.permissions.PermissionsRequest
 import com.helible.pilot.permissions.RequestHardwareFeatures

@@ -22,7 +22,6 @@ class BluetoothDataTransferService(
         return flow {
             if (!socket.isConnected)
                 return@flow
-
             val buffer = BufferedInputStream(socket.inputStream, maxPackageSize)
             while (true) {
                 val message: String = try {
@@ -39,9 +38,11 @@ class BluetoothDataTransferService(
                         emit(GeneralMessage(messageType, messageData))
                     }
                 } catch (e: NoSuchElementException) {
-                    Log.e("BluetoothController", "Message type is invalid: $message")
+                    Log.e("BluetoothController", "Message type is invalid: ${e.message}")
                 } catch (e: NumberFormatException) {
-                    Log.e("BluetoothController", "Message invalid, may be device buffer congested: $message")
+                    Log.e("BluetoothController", "Message invalid, may be device buffer congested: ${e.message}")
+                } catch (e: Exception) {
+                    Log.e("BluetoothController", "Unknown error: ${e.message}")
                 }
             }
         }.flowOn(Dispatchers.IO)
