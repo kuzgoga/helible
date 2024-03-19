@@ -63,11 +63,11 @@ fun RotorsTestPage(
             Slider(
                 value = rotorsDuty.r2.toFloat(),
                 onValueChange = { setRotorsDuty(rotorsDuty.copy(r2 = it.toInt().toShort())) },
-                valueRange = -5000f..5000f,
+                valueRange = 0f..5000f,
                 steps = 10
             )
             Text(
-                text = "При перемещении слайдера вправо ротор 1 должен вращаться по часовой стрелке, если смотреть сверху.",
+                text = "При отклонении слайдера вправо от центра ротор 1 должен вращаться по часовой стрелке, а при отклонении влево - против часовой, если смотреть сверху.",
                 textAlign = TextAlign.Center
             )
 
@@ -79,13 +79,14 @@ fun RotorsTestPage(
             Slider(
                 value = rotorsDuty.r3.toFloat(),
                 onValueChange = { setRotorsDuty(rotorsDuty.copy(r3 = it.toInt().toShort())) },
-                valueRange = 0f..5000f,
+                valueRange = -5000f..5000f,
                 steps = 10
             )
             Text(
-                text = "При отклонении слайдера вправо от центра ротор 1 должен вращаться по часовой стрелке, а при отклонении влево - против часовой, если смотреть сверху.",
+                text = "При перемещении слайдера вправо ротор 1 должен вращаться по часовой стрелке, если смотреть сверху.",
                 textAlign = TextAlign.Center
             )
+
             FloatingActionButton(
                 onClick = { stopRotors() },
                 containerColor = Color(245, 47, 7),
@@ -102,7 +103,7 @@ fun RotorsTestPage(
     }
 }
 
-@Preview(showBackground = true)
+@Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun RotorsTestPagePreview() {
     TestblueTheme {
